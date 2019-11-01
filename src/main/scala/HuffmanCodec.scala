@@ -1,6 +1,6 @@
 import java.math.BigInteger
 
-object Encoder {
+object HuffmanCodec {
 
   class EmptyTree[T] extends Tree[T]
 
@@ -116,19 +116,6 @@ object Encoder {
               s"${t.node.getOrElse("")}(${t.left.toString},${t.right.toString})"
           }
         case _ => ""
-      }
-    }
-
-    def toDebugString: String = {
-      this match {
-        case t: NonEmptyTree[T] =>
-          (t.right, t.left) match {
-            case (l, r) if (l.isInstanceOf[EmptyTree[T]] && r.isInstanceOf[EmptyTree[T]]) =>
-              s"-${t.node.getOrElse("")}"
-            case _ =>
-              s"=${t.node.getOrElse("")}(${t.left.toDebugString},${t.right.toDebugString})"
-          }
-        case _ => "+"
       }
     }
 
