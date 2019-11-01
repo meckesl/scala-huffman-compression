@@ -77,7 +77,6 @@ object Encoder {
         data.flatMap(encode(_))
     }
 
-    @throws(classOf[NoSuchElementException])
     def decode(data: Seq[Boolean]): Option[T] = {
       this match {
         case tree: NonEmptyTree[T] =>
@@ -86,7 +85,7 @@ object Encoder {
             case h :: tail =>
               if (h) tree.right.decode(tail) else tree.left.decode(tail)
           }
-        case _ => throw new NoSuchElementException
+        case _ => None
       }
     }
 
