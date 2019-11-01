@@ -1,26 +1,39 @@
+import java.math.BigInteger
+
 object Encoder {
 
-  type TreeData = String;
-
   class EmptyTree[T] extends Tree[T]
+
   case class NonEmptyTree[T](node: Option[T], weight: Option[Int], left: Tree[T], right: Tree[T]) extends Tree[T]
 
   class Tree[T] {
 
-    def build(xs: Seq[T]): Tree[T] = {
-      xs match {
-        case Nil => new EmptyTree
-        case _ => {
-          val branch = xs.tail.partition(xs.indexOf(_) % 2 == 0)
-          NonEmptyTree(Some(xs.head), None, build(branch._2), build(branch._1))
+    def buildBalanced(xs: Seq[T]): Tree[T] = {
+
+      def build(xs: Seq[T]): Tree[T] = {
+        xs match {
+          case Nil => new EmptyTree
+          case _ => {
+            val branch = xs.tail.partition(xs.indexOf(_) % 2 == 0)
+            NonEmptyTree(Some(xs.head), None, build(branch._2), build(branch._1))
+          }
         }
       }
+
+      build(
+        xs
+          .map(e => (e, xs.count(_ equals e)))
+          .sortWith(_._2 > _._2)
+          .distinct
+          .map(_._1)
+      )
+
     }
 
-    def buildHuffman(xs:Seq[T]) : Tree[T] = {
+    def buildHuffman(xs: Seq[T]): Tree[T] = {
 
-      def build(xsUnsorted:Seq[NonEmptyTree[T]]): Tree[T] = {
-        val xs = xsUnsorted.sortWith(_.weight.getOrElse(0) < _.weight.getOrElse(0))
+      def build(xsu: Seq[NonEmptyTree[T]]): Tree[T] = {
+        val xs = xsu.sortWith(_.weight.getOrElse(0) < _.weight.getOrElse(0))
         xs.size match {
           case 1 => xs.head
           case _ => {
@@ -36,7 +49,8 @@ object Encoder {
         xs
           .map(e => (e, xs.count(_ equals e)))
           .distinct
-          .map({ case (node: T, weight: Int) => NonEmptyTree(Some(node), Some(weight), new EmptyTree, new EmptyTree)})
+          .map({ case (node: T, weight: Int) =>
+            NonEmptyTree(Some(node), Some(weight), new EmptyTree, new EmptyTree) })
       )
 
     }
@@ -44,76 +58,107 @@ object Encoder {
     @throws(classOf[IllegalArgumentException])
     def encode(data: T, acc: Seq[Boolean] = Seq[Boolean]()): Seq[Boolean] = {
       this match {
-        case tree: NonEmptyTree[T] => {
-          if (tree.node.equals(Some(data))) acc else {
-            try ((acc :+ false) ++ tree.left.encode(data, acc)) catch {
+        case tr: NonEmptyTree[T] =>
+          if (tr.node.contains(data)) {
+            acc
+          } else {
+            try tr.left.encode(data, acc :+ false) catch {
               case e: IllegalArgumentException =>
-                try ((acc :+ true) ++ tree.right.encode(data, acc)) catch {
-                  case e: IllegalArgumentException => throw (e)
+                try tr.right.encode(data, acc :+ true) catch {
+                  case e: IllegalArgumentException => throw new IllegalArgumentException()
                 }
             }
           }
-        }
         case _ => throw new IllegalArgumentException()
       }
+    }
+
+    def encodeSeq(data: Seq[T]): Seq[Boolean] = {
+        data.flatMap(encode(_))
     }
 
     @throws(classOf[NoSuchElementException])
     def decode(data: Seq[Boolean]): Option[T] = {
       this match {
-        case tree: NonEmptyTree[T] => {
+        case tree: NonEmptyTree[T] =>
           data match {
             case Nil => tree.node
             case h :: tail =>
               if (h) tree.right.decode(tail) else tree.left.decode(tail)
           }
-        }
         case _ => throw new NoSuchElementException
       }
     }
 
-    override def toString = {
+    def decodeSeq(data: Seq[Boolean], root: Tree[T] = this) : Seq[T] = {
       this match {
-        case t : NonEmptyTree[T] => {
-          (t.right, t.left) match {
-            case (l, r) if (l.isInstanceOf[EmptyTree[T]] && r.isInstanceOf[EmptyTree[T]]) => {
-              s"${t.node.getOrElse("").toString}"
+        case tree : NonEmptyTree[T] =>
+          if (tree.node.nonEmpty) {
+            data.size match {
+              case 0 => Seq[T](tree.node.get)
+              case _ => tree.node.get +: root.decodeSeq(data)
             }
-            case _ => {
-              s"${t.node.getOrElse("").toString}(${t.left.toString},${t.right.toString})"
-            }
+          } else {
+            if (!data.head)
+              tree.left.decodeSeq(data.tail, root)
+            else
+              tree.right.decodeSeq(data.tail, root)
           }
-        }
+      }
+    }
+
+    override def toString: String = {
+      this match {
+        case t: NonEmptyTree[T] =>
+          (t.right, t.left) match {
+            case (l, r) if (l.isInstanceOf[EmptyTree[T]] && r.isInstanceOf[EmptyTree[T]]) =>
+              s"${t.node.getOrElse("")}"
+            case _ =>
+              s"${t.node.getOrElse("")}(${t.left.toString},${t.right.toString})"
+          }
         case _ => ""
       }
     }
 
+    def toDebugString: String = {
+      this match {
+        case t: NonEmptyTree[T] =>
+          (t.right, t.left) match {
+            case (l, r) if (l.isInstanceOf[EmptyTree[T]] && r.isInstanceOf[EmptyTree[T]]) =>
+              s"-${t.node.getOrElse("")}"
+            case _ =>
+              s"=${t.node.getOrElse("")}(${t.left.toDebugString},${t.right.toDebugString})"
+          }
+        case _ => "+"
+      }
+    }
 
     def fromString(s: String): Tree[T] = {
       import scala.util.parsing.combinator.RegexParsers
       object TreeParser extends RegexParsers {
         override def skipWhitespace = false
-        def node: Parser[T] = """[^(),]+""".r ^^ {_.asInstanceOf[T]}
-        def subtrees: Parser[(Tree[T],Tree[T])] = "(" ~ tree.? ~ "," ~ tree.? ~ ")" ^^ {
+        def node: Parser[T] = """[^(),]{1,}""".r ^^ { _.asInstanceOf[T] }
+        def subtrees: Parser[(Tree[T], Tree[T])] = "(" ~ tree.? ~ "," ~ tree.? ~ ")" ^^ {
           case (start ~ left ~ comma ~ right ~ stop) =>
             (left.getOrElse(new EmptyTree[T]), right.getOrElse(new EmptyTree[T]))
         }
-        def tree: Parser[Tree[T]] = ((node | subtrees) | (node ~ subtrees)) ^^ {
-          case node: T => new NonEmptyTree[T](Some(node), None, new EmptyTree[T], new EmptyTree[T])
-          case (left: Tree[T], right: Tree[T]) => new NonEmptyTree[T](None, None, left, right)
+        def tree: Parser[Tree[T]] = (node ~ subtrees | (subtrees | node)) ^^ {
+          case ((n: T) ~ ((l: Tree[T], r: Tree[T]))) => new NonEmptyTree[T](Some(n), None, l, r)
+          case (l: Tree[T], r: Tree[T]) => new NonEmptyTree[T](None, None, l, r)
+          case n: T => new NonEmptyTree[T](Some(n), None, new EmptyTree[T], new EmptyTree[T])
           case _ => new EmptyTree[T]
         }
         def apply(input: String) = parseAll(tree, input) match {
           case Success(result, _) => result
-          case failure : NoSuccess => scala.sys.error(failure.msg)
+          case failure: NoSuccess => scala.sys.error(failure.msg)
         }
       }
       TreeParser.apply(s)
     }
 
-    def toHTML : String = {
+    def toHTML: String = {
       this match {
-        case t : NonEmptyTree[T] => {
+        case t: NonEmptyTree[T] => {
           s"""
           <div style='width: 100%;'>${t.node}<br/>
           <div style='float:left; width: 50%;'>${t.left.toHTML}</div>
@@ -128,7 +173,6 @@ object Encoder {
   }
 
 
-
   def main(args: Array[String]): Unit = {
 
     val inputFileName = "sample.txt"
@@ -136,32 +180,48 @@ object Encoder {
 
     //val nodes = inputFile.filter(_.toString.matches("[a-zA-Z ]+")).toLowerCase//.split("\\W")
 
-    val nodes = inputFile.filter(_.toString.matches("[^(,]+"))
-
-    val tree = new Tree[Char].buildHuffman(nodes)
+    val nodes = inputFile.filter(_.toString.matches("[^(),]+")) //[^(),]+
 
     println(s"Building Tree using source ${inputFileName} ... ")
+    val tree = new Tree[Char].buildHuffman(nodes)
 
+    println
     println(s"Serializing Tree ... ")
-    val serialized = tree.toString
-    println(serialized)
+    val serialized: String = tree.toString
+    println(tree.toString)
 
+    println
     println("Unserializing Tree ...")
     val tree2 = new Tree[Char].fromString(serialized)
     println(tree2.toString)
 
-    /*nodes.toSeq.distinct.map(n => {
+    println
+    println("Map ...")
+    nodes.toSeq.distinct.map(n => {
       println(s"${n} = ${tree.encode(n).map(if (_) 1 else 0).mkString("")}")
-    })*/
+    })
 
-    /*import java.io._
+    val word = "the little boy is hungry and keeps doing stupid things. The man likes to build encoding software."
+    println
+    println(s"Encoding '$word' ...")
+    println(new BigInteger(word.getBytes()).toString(2))
+    println("    bits=" + new BigInteger(word.getBytes()).toString(2).size)
+    val encodedWord = tree.encodeSeq(word)
+    println(encodedWord.map(x=> if (x == true) 1 else 0 ).mkString)
+    println("    bits=" + encodedWord.size + " bytes=" + word.length + " avg=" + (encodedWord.size / word.length))
+
+    println
+    println(s"Decoding sequence ...")
+    println(tree.decodeSeq(encodedWord).mkString(""))
+
+    //println(tree.decodeSeq(Seq(true, false, false, true, true, true)))
+
+
+
+    import java.io._
     val pw = new PrintWriter(new File(s"src/main/resources/${inputFileName}.codec" ))
     pw.write(tree.toString)
     pw.close
-
-    val pw2 = new PrintWriter(new File(s"src/main/resources/${inputFileName}.codec.html" ))
-    pw2.write(tree.toHTML)
-    pw2.close*/
 
   }
 
