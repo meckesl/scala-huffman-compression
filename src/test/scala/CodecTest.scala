@@ -14,55 +14,66 @@ class CodecTest extends AnyFunSpec with Matchers {
 
   describe("Huffman Codec") {
 
-    describe("Should build with basic text data") {
+    describe("Basic 'hello world' String") {
 
       val tree = new Tree[Char].buildHuffman("hello world")
 
-      it("should create encoding map") {
+      it("creates encoding map") {
         assert(tree.toString == "((((e,h),o),l),((d,r),(w, )))")
       }
 
-      it("should encode 'h' char on 4 bits") {
+      it("encodes 'h' char on 4 bits") {
         val encoded = asBinaryDigits(tree.encode('h'))
         assert(encoded == "0001");
       }
 
-      it("should encode 'l' char on 2 bits") {
+      it("encodes 'l' char on 2 bits") {
         val encoded = asBinaryDigits(tree.encode('l'))
         assert(encoded == "01");
       }
 
-      it("should decode 'h' char") {
+      it("encodes ' ' char on 3 bits") {
+        val encoded = asBinaryDigits(tree.encode(' '))
+        assert(encoded == "111");
+      }
+
+      it("decodes 'h' char") {
         val code = asBoolSeq("0001")
         assert(tree.decode(code).contains('h'));
       }
 
-      it("should encode 'hello world' char sequence") {
+      it("decodes 'l' char") {
+        val code = asBoolSeq("01")
+        assert(tree.decode(code).contains('l'));
+      }
+
+      it("decodes ' ' char") {
+        val code = asBoolSeq("111")
+        assert(tree.decode(code).contains(' '));
+      }
+
+      it("encodes 'hello world' char sequence") {
         val charSeq = "hello world"
         val encoded = asBinaryDigits(tree.encodeSeq(charSeq))
         assert(encoded == "00010000010100111111000110101100");
       }
 
-      it("should decode 'hello world' char sequence") {
+      it("decodes 'hello world' char sequence") {
         val data = asBoolSeq("00010000010100111111000110101100")
         assert(tree.decodeSeq(data).mkString("") == "hello world");
       }
     }
 
-    describe("should build with english sample text") {
+    describe("English 1kb text file") {
 
-      val data = loadTestFileAlphanum("englishSample.txt")
+      val data = loadTestFileAlphanum("english_1kb.txt")
       val tree = new Tree[Char].buildHuffman(data)
 
-      it("should create encoding map") {
-        assert(tree.toString.equals(
+      assert(tree.toString.equals(
           "((( ,((d,((b,((A,L),k)),c)),t)),(((((p,(0,G)),m),(l,y)),a),(((u,w)," +
             "(((((7,S),(B,q)),((4,j),(3,1))),(((O,z),(R,H)),((W,E),I)))," +
             "(((C,F),M),v))),i))),(((n,o),e),((r,s)," +
             "(h,((f,((T,(6,D)),(x,5))),g)))))"))
-      }
-
-      describe("full english sentence") {
 
         val sentence = "Hello I am the best string in the world of strings " +
           "and I am here to prove full sentences can be coded and decoded"
@@ -77,26 +88,23 @@ class CodecTest extends AnyFunSpec with Matchers {
 
         val bitsStdEncoding = new BigInteger(sentence.getBytes()).toString(2)
 
-        it("should encode") {
+        it("should encode an english sentence") {
           val encoded = asBinaryDigits(tree.encodeSeq(sentence))
           assert(encoded == bits);
         }
 
-        it("should decode") {
+        it("should decode an english sentence") {
           val data = asBoolSeq(bits)
           assert(tree.decodeSeq(data).mkString("") == sentence);
         }
 
-        it(s"should have better coding compactness (${bits.length} bits) compared " +
-          s"to standard encoding (${bitsStdEncoding.length} bits)") {
+        it(s"should have better coding compactness (${bits.length} bits) " +
+          s"than standard encoding (${bitsStdEncoding.length} bits)") {
           assert(bits.length < (bitsStdEncoding.length / 1.5))
         }
 
       }
 
-    }
-
   }
-
 
 }
