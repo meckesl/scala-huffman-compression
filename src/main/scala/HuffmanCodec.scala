@@ -55,7 +55,7 @@ object HuffmanCodec {
 
     }
 
-    @throws(classOf[IllegalArgumentException])
+    @throws(classOf[NoSuchElementException])
     def encode(data: T, acc: Seq[Boolean] = Seq[Boolean]()): Seq[Boolean] = {
       this match {
         case tr: NonEmptyTree[T] =>
@@ -63,13 +63,14 @@ object HuffmanCodec {
             acc
           } else {
             try tr.left.encode(data, acc :+ false) catch {
-              case e: IllegalArgumentException =>
+              case e: NoSuchElementException =>
                 try tr.right.encode(data, acc :+ true) catch {
-                  case e: IllegalArgumentException => throw new IllegalArgumentException()
+                  case e: NoSuchElementException =>
+                    throw new NoSuchElementException(data.toString)
                 }
             }
           }
-        case _ => throw new IllegalArgumentException()
+        case _ => throw new NoSuchElementException
       }
     }
 
@@ -89,31 +90,41 @@ object HuffmanCodec {
       }
     }
 
-    def decodeSeq(data: Seq[Boolean], root: Tree[T] = this) : Seq[T] = {
+    def decodeSeq(binary: Seq[Boolean], root: Tree[T] = this) : Seq[T] = {
       this match {
         case tree : NonEmptyTree[T] =>
           if (tree.node.nonEmpty) {
-            data.size match {
+            binary.size match {
               case 0 => Seq[T](tree.node.get)
-              case _ => tree.node.get +: root.decodeSeq(data)
+              case _ => tree.node.get +: root.decodeSeq(binary)
             }
           } else {
-            if (!data.head)
-              tree.left.decodeSeq(data.tail, root)
+            if (!binary.head)
+              tree.left.decodeSeq(binary.tail, root)
             else
-              tree.right.decodeSeq(data.tail, root)
+              tree.right.decodeSeq(binary.tail, root)
           }
       }
     }
 
     override def toString: String = {
+
+      def esc(data: Option[T]) : String = {
+        data match {
+          case Some(data) =>
+            data.toString
+              .replaceAll("([(|)|,])","\\\\$1")
+          case None => ""
+        }
+      }
+
       this match {
         case t: NonEmptyTree[T] =>
           (t.right, t.left) match {
             case (l, r) if (l.isInstanceOf[EmptyTree[T]] && r.isInstanceOf[EmptyTree[T]]) =>
-              s"${t.node.getOrElse("")}"
+              esc(t.node)
             case _ =>
-              s"${t.node.getOrElse("")}(${t.left.toString},${t.right.toString})"
+              s"${esc(t.node)}(${t.left},${t.right})"
           }
         case _ => ""
       }
@@ -123,7 +134,9 @@ object HuffmanCodec {
       import scala.util.parsing.combinator.RegexParsers
       object TreeParser extends RegexParsers {
         override def skipWhitespace = false
-        def node: Parser[T] = """[^(),]{1,}""".r ^^ { _.asInstanceOf[T] }
+        //def node: Parser[T] = """[^(),]{1,}""".r ^^ { _.charAt(0).asInstanceOf[T] }
+        // (?<!Y)X matches an X that is not preceded by a Y
+        def node: Parser[T] = """[^((?<!\\\\)[(])((?<!\\\\)[,])((?<!\\\\)[)])]{1,}""".r ^^ { _.charAt(0).asInstanceOf[T] }
         def subtrees: Parser[(Tree[T], Tree[T])] = "(" ~ tree.? ~ "," ~ tree.? ~ ")" ^^ {
           case (start ~ left ~ comma ~ right ~ stop) =>
             (left.getOrElse(new EmptyTree[T]), right.getOrElse(new EmptyTree[T]))
@@ -201,8 +214,6 @@ object HuffmanCodec {
     println(tree.decodeSeq(encodedWord).mkString(""))
 
     //println(tree.decodeSeq(Seq(true, false, false, true, true, true)))
-
-
 
     import java.io._
     val pw = new PrintWriter(new File(s"src/main/resources/${inputFileName}.codec" ))

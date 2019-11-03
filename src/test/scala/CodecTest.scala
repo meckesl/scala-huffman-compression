@@ -22,17 +22,17 @@ class CodecTest extends AnyFunSpec with Matchers {
         assert(tree.toString == "((((e,h),o),l),((d,r),(w, )))")
       }
 
-      it("encodes 'h' char on 4 bits") {
+      it("encodes 'h' char (4 bits)") {
         val encoded = asBinaryDigits(tree.encode('h'))
         assert(encoded == "0001");
       }
 
-      it("encodes 'l' char on 2 bits") {
+      it("encodes 'l' char (2 bits)") {
         val encoded = asBinaryDigits(tree.encode('l'))
         assert(encoded == "01");
       }
 
-      it("encodes ' ' char on 3 bits") {
+      it("encodes ' ' char (3 bits)") {
         val encoded = asBinaryDigits(tree.encode(' '))
         assert(encoded == "111");
       }
@@ -61,6 +61,39 @@ class CodecTest extends AnyFunSpec with Matchers {
       it("decodes 'hello world' char sequence") {
         val data = asBoolSeq("00010000010100111111000110101100")
         assert(tree.decodeSeq(data).mkString("") == "hello world");
+      }
+
+      describe("Builds codec from serialized encoding map") {
+
+        val serializedCodec = "((((e,h),o),l),((d,r),(w, )))"
+        val loaded = new Tree[Char].fromString(serializedCodec)
+
+        it("ensures the codec tree serialization is identical") {
+          assert(loaded.toString == serializedCodec)
+          assert(loaded.toString == tree.toString)
+        }
+
+        it("encodes 'h' char (4 bits)") {
+          val encoded = asBinaryDigits(loaded.encode('h'))
+          assert(encoded == "0001");
+        }
+
+        it("decodes 'h' char") {
+          val code = asBoolSeq("0001")
+          assert(loaded.decode(code).contains('h'));
+        }
+
+        it("encodes 'hello world' char sequence") {
+          val charSeq = "hello world"
+          val encoded = asBinaryDigits(loaded.encodeSeq(charSeq))
+          assert(encoded == "00010000010100111111000110101100");
+        }
+
+        it("decodes 'hello world' char sequence") {
+          val data = asBoolSeq("00010000010100111111000110101100")
+          assert(loaded.decodeSeq(data).mkString("") == "hello world");
+        }
+
       }
     }
 
@@ -104,6 +137,15 @@ class CodecTest extends AnyFunSpec with Matchers {
         }
 
       }
+
+    describe("Special Characters") {
+
+      val data = "&é\"'(§,è!çà)-"
+      val tree = new Tree[Char].buildHuffman(data)
+
+
+
+    }
 
   }
 

@@ -19,7 +19,9 @@ class HuffmanTooling[T] {
         Some(new Tree[T]()
           .buildHuffman(
             scala.io.Source.fromFile(file)
-              .mkString.toSeq.asInstanceOf[Seq[T]]))
+              .mkString
+              .filter(_.toString.matches("[^(),]+"))
+              .toSeq.asInstanceOf[Seq[T]]))
       case  None => throw new FileNotFoundException("There is no open file")
     }
     this
@@ -34,6 +36,26 @@ class HuffmanTooling[T] {
     this
   }
 
+  @throws(classOf[Exception])
+  def encode(s: Seq[T]): String = {
+    codec match {
+      case Some(codec) =>
+        HuffmanTooling.asBinaryDigits(codec.encodeSeq(s))
+      case None => throw new Exception("Codec not loaded")
+    }
+  }
+
+  @throws(classOf[Exception])
+  def decode(value: String): String = {
+    codec match {
+      case Some(codec) =>
+        codec.decodeSeq(HuffmanTooling.asBoolList(value)).mkString("")
+      case None => throw new Exception("Codec not loaded")
+    }
+  }
+
+
+  @throws(classOf[Exception])
   def encodeAndSave: HuffmanTooling[T] = {
 
     (codec, file) match {
@@ -50,17 +72,16 @@ class HuffmanTooling[T] {
 
         val fileData = scala.io.Source.fromFile(f).mkString.toSeq.asInstanceOf[Seq[T]]
         val bits = codec.encodeSeq(fileData)
-        val bytes: Seq[Int] = bits.grouped(8).map(HuffmanTooling.bitsAsInts(_)).toSeq
-        println(" ---- - -- - - - - - - - --- --- -- - -")
-        println(bits.size + " bits")
-        println(bytes.size + " bytes")
-        writeInts(bytes)
+        val ints: Seq[Int] = bits.grouped(8).map(HuffmanTooling.bitsAsInts(_)).toSeq
+
+        writeInts(ints)
         baos.writeTo(fos)
         baos.close()
-        println(" ---- - -- - - - - - - - --- --- -- - -")
         fos.close()
 
       }
+      case _ => throw new Exception("A file and a codec must be loaded")
+
     }
     this
   }
