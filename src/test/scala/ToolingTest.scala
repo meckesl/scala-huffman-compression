@@ -8,7 +8,8 @@ class ToolingTest extends AnyFunSpec with Matchers {
 
   describe("Huffman Tooling") {
 
-    describe("Generates and stores Codec data") {
+    describe("English-1kb -> Generates and stores Codec data") {
+
       new HuffmanTooling[Char]()
         .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_1kb.txt")
         .generateCodec
@@ -39,9 +40,38 @@ class ToolingTest extends AnyFunSpec with Matchers {
         }
 
       }
+    }
+
+    describe("SpecialChars -> Generates and stores Codec data") {
+
+      new HuffmanTooling[Char]()
+        .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/special.txt")
+        .generateCodec
+        .saveCodec
+
+      describe("Loads codec data") {
+        val tooling = new HuffmanTooling[Char]()
+          .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/special.txt.codec")
+
+      }
 
     }
 
+
+    describe("UTF8 -> Generates and stores Codec data") {
+
+      new HuffmanTooling[Char]()
+        .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/html_UTF8_250kb.txt")
+        .generateCodec
+        .saveCodec
+
+      describe("Loads codec data") {
+        val tooling = new HuffmanTooling[Char]()
+          .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/html_UTF8_250kb.codec")
+
+      }
+
+    }
 
   }
 

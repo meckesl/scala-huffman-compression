@@ -13,37 +13,49 @@ class SpecialCharsTest extends AnyFunSpec with Matchers {
 
     describe("Structure Characters") {
 
-        val r = """^((?>z)[(),z]){1,}""".r
-        val data = "(,)"
-        val tree = new Tree[Char].buildHuffman(data)
+        //https://regex101.com/r/sS2dM8/35
+        val r = """(\\\\|[^(),\\]|\\,|\\\(|\\\))""".r
+
+        it("Regex 0") {
+          assert(r.findAllIn("a(b,c)").toList == List("a", "b", "c"))
+        }
 
         it("Regex 1") {
-          assert(r.findFirstIn("z,(b,c)") == Some("z,"))
+          assert(r.findAllIn("\\,(b,c)").toList == List("\\,", "b", "c"))
         }
 
         it("Regex 2") {
-          assert(r.findFirstIn(",(b,c)") == None)
+          assert(r.findAllIn(",(b,c)").toList == List("b", "c"))
         }
 
         it("Regex 3") {
-          assert(r.findFirstIn("((b,c)") == None)
+          assert(r.findFirstIn("((b,c)") == Some("b"))
         }
 
         it("Regex 4") {
-          assert(r.findFirstIn(")(b,c)") == None)
+          assert(r.findFirstIn(")(b,c)") == Some("b"))
         }
 
         it("Regex 5") {
-          assert(r.findFirstIn("z)(b,c)") == Some("z)"))
+          assert(r.findFirstIn("\\)(b,c)") == Some("\\)"))
         }
 
         it("Regex 6") {
-          assert(r.findFirstIn("z((b,c)") == Some("z("))
+          assert(r.findFirstIn("\\((b,c)") == Some("\\("))
         }
 
         it("Regex 7") {
-          assert(r.findFirstIn("z(z((b,c)") == Some("z(z("))
+          assert(r.findFirstIn("\\(\\((b,c)") == Some("\\(\\("))
         }
+
+        it("Regex 8") {
+          assert(r.findFirstIn("\\(\\,(b,c)") == Some("\\(\\,"))
+        }
+
+        it("Regex 9") {
+          assert(r.findFirstIn("c,") == Some("c"))
+        }
+
         /*it("Should serialize") {
           assert(tree.toString ==
             "((\\,,\\(),\\))")

@@ -136,7 +136,7 @@ object HuffmanCodec {
         override def skipWhitespace = false
         //def node: Parser[T] = """[^(),]{1,}""".r ^^ { _.charAt(0).asInstanceOf[T] }
         // (?<!Y)X matches an X that is not preceded by a Y
-        def node: Parser[T] = """[^((?<!\\\\)[(])((?<!\\\\)[,])((?<!\\\\)[)])]{1,}""".r ^^ { _.charAt(0).asInstanceOf[T] }
+        def node: Parser[T] = """(\\\\|[^(),\\]|\\,|\\\(|\\\))""".r ^^ { _.charAt(0).asInstanceOf[T] }
         def subtrees: Parser[(Tree[T], Tree[T])] = "(" ~ tree.? ~ "," ~ tree.? ~ ")" ^^ {
           case (start ~ left ~ comma ~ right ~ stop) =>
             (left.getOrElse(new EmptyTree[T]), right.getOrElse(new EmptyTree[T]))

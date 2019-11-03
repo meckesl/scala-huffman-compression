@@ -20,7 +20,6 @@ class HuffmanTooling[T] {
           .buildHuffman(
             scala.io.Source.fromFile(file)
               .mkString
-              .filter(_.toString.matches("[^(),]+"))
               .toSeq.asInstanceOf[Seq[T]]))
       case  None => throw new FileNotFoundException("There is no open file")
     }
@@ -115,9 +114,6 @@ class HuffmanTooling[T] {
 }
 
 object HuffmanTooling {
-  //def loadBuffered(f: String) = scala.io.Source.fromFile(f)
-  //def loadTestFileAlphanum(f: String) = scala.io.Source.fromResource(f).mkString.filter(_.toString.matches(Regex.alphanum))
-
   def bitsAsInts(bit8: Seq[Boolean]): Int = Integer.parseInt(asBinaryDigits(bit8), 2)
   def asBinaryDigits(bs: Seq[Boolean]) = bs.map(if (_) '1' else '0').mkString("")
   def asBoolList(binary: String) : Seq[Boolean] = binary.toSeq.map(x => if (x.equals('1')) true else false).toList
