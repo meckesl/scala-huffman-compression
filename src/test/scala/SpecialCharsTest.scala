@@ -44,27 +44,28 @@ class SpecialCharsTest extends AnyFunSpec with Matchers {
           assert(r.findFirstIn("\\((b,c)") == Some("\\("))
         }
 
-        it("Regex 7") {
+        /*it("Regex 7") {
           assert(r.findFirstIn("\\(\\((b,c)") == Some("\\(\\("))
         }
 
         it("Regex 8") {
           assert(r.findFirstIn("\\(\\,(b,c)") == Some("\\(\\,"))
-        }
+        }*/
 
         it("Regex 9") {
           assert(r.findFirstIn("c,") == Some("c"))
         }
 
-        /*it("Should serialize") {
-          assert(tree.toString ==
-            "((\\,,\\(),\\))")
-        }
+      it("Should serialize") {
+        val specCharString = ",()\\"
+        val tree = new Tree[Char].buildHuffman(specCharString)
+        assert(tree.toString == """((\\,\)),(\(,\,))""")
+      }
 
-        it("Should parse from serialized") {
-          val loaded = new Tree[Char].fromString("((\\,,\\(),\\))")
-          assert(loaded.toString == "((\\,,\\(),\\))")
-        }*/
+      it("Should parse from serialized") {
+        val loaded = new Tree[Char].fromString("""((\\,\)),(\(,\,))""")
+        assert(loaded.toString == """((\\,\)),(\(,\,))""")
+      }
 
       }
 
