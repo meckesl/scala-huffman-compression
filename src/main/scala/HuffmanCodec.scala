@@ -1,5 +1,7 @@
 import java.math.BigInteger
 
+import scala.annotation.tailrec
+
 object HuffmanCodec {
 
   class EmptyTree[T] extends Tree[T]
@@ -47,8 +49,8 @@ object HuffmanCodec {
 
       build(
         xs
-          .map(e => (e, xs.count(_ equals e)))
           .distinct
+          .map(e => (e, xs.count(_ equals e)))
           .map({ case (node: T, weight: Int) =>
             NonEmptyTree(Some(node), Some(weight), new EmptyTree, new EmptyTree) })
       )
@@ -58,18 +60,16 @@ object HuffmanCodec {
     @throws(classOf[NoSuchElementException])
     def encode(data: T, acc: Seq[Boolean] = Seq[Boolean]()): Seq[Boolean] = {
       this match {
-        case tr: NonEmptyTree[T] =>
-          if (tr.node.contains(data)) {
+        case tr: NonEmptyTree[T] if tr.node.contains(data) =>
             acc
-          } else {
-            try tr.left.encode(data, acc :+ false) catch {
+        case tr: NonEmptyTree[T] =>
+            try tr.right.encode(data, acc :+ true) catch {
               case e: NoSuchElementException =>
-                try tr.right.encode(data, acc :+ true) catch {
+                try tr.left.encode(data, acc :+ false) catch {
                   case e: NoSuchElementException =>
                     throw new NoSuchElementException(data.toString)
                 }
             }
-          }
         case _ => throw new NoSuchElementException
       }
     }
@@ -90,20 +90,21 @@ object HuffmanCodec {
       }
     }
 
-    def decodeSeq(binary: Seq[Boolean], root: Tree[T] = this) : Seq[T] = {
+    @tailrec
+    final def decodeSeq(binary: List[Boolean], root: Tree[T] = this, acc: Seq[T] = Seq()) : Seq[T] = {
       this match {
-        case tree : NonEmptyTree[T] =>
-          if (tree.node.nonEmpty) {
-            binary.size match {
-              case 0 => Seq[T](tree.node.get)
-              case _ => tree.node.get +: root.decodeSeq(binary)
+        case tree : NonEmptyTree[T] if (tree.node.nonEmpty) =>
+            binary match {
+              case Nil => acc :+ tree.node.get
+              case _ =>  root.decodeSeq(binary, root, acc :+ tree.node.get)
             }
-          } else {
-            if (!binary.head)
-              tree.left.decodeSeq(binary.tail, root)
-            else
-              tree.right.decodeSeq(binary.tail, root)
-          }
+        case tree : NonEmptyTree[T] =>
+            binary match {
+              case Nil => acc
+              case h::tail if !h => tree.left.decodeSeq(tail, root, acc)
+              case h::tail if h => tree.right.decodeSeq(tail, root, acc)
+            }
+        case _ => Seq[T]()
       }
     }
 
@@ -134,7 +135,6 @@ object HuffmanCodec {
       import scala.util.parsing.combinator.RegexParsers
       object TreeParser extends RegexParsers {
         override def skipWhitespace = false
-        //def node: Parser[T] = """[^(),]{1,}""".r ^^ { _.charAt(0).asInstanceOf[T] }
         // (?<!Y)X matches an X that is not preceded by a Y
         def node: Parser[T] = """(\\\\|[^(),\\]|\\,|\\\(|\\\))""".r ^^ {
           res => (if (res.startsWith("\\")) res.drop(1) else res).charAt(0).asInstanceOf[T]
@@ -170,57 +170,6 @@ object HuffmanCodec {
         case _ => ""
       }
     }
-
-  }
-
-
-  def main(args: Array[String]): Unit = {
-
-    val inputFileName = "sample.txt"
-    val inputFile = scala.io.Source.fromResource(inputFileName).mkString
-
-    //val nodes = inputFile.filter(_.toString.matches("[a-zA-Z ]+")).toLowerCase//.split("\\W")
-
-    val nodes = inputFile.filter(_.toString.matches("[^(),]+")) //[^(),]+
-
-    println(s"Building Tree using source ${inputFileName} ... ")
-    val tree = new Tree[Char].buildHuffman(nodes)
-
-    println
-    println(s"Serializing Tree ... ")
-    val serialized: String = tree.toString
-    println(tree.toString)
-
-    println
-    println("Unserializing Tree ...")
-    val tree2 = new Tree[Char].fromString(serialized)
-    println(tree2.toString)
-
-    println
-    println("Map ...")
-    nodes.toSeq.distinct.map(n => {
-      println(s"${n} = ${tree.encode(n).map(if (_) 1 else 0).mkString("")}")
-    })
-
-    val word = "the little boy is hungry and keeps doing stupid things. The man likes to build encoding software."
-    println
-    println(s"Encoding '$word' ...")
-    println(new BigInteger(word.getBytes()).toString(2))
-    println("    bits=" + new BigInteger(word.getBytes()).toString(2).size)
-    val encodedWord = tree.encodeSeq(word)
-    println(encodedWord.map(x=> if (x == true) 1 else 0 ).mkString)
-    println("    bits=" + encodedWord.size + " bytes=" + word.length + " avg=" + (encodedWord.size / word.length))
-
-    println
-    println(s"Decoding sequence ...")
-    println(tree.decodeSeq(encodedWord).mkString(""))
-
-    //println(tree.decodeSeq(Seq(true, false, false, true, true, true)))
-
-    import java.io._
-    val pw = new PrintWriter(new File(s"src/main/resources/${inputFileName}.codec" ))
-    pw.write(tree.toString)
-    pw.close
 
   }
 

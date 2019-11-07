@@ -1,4 +1,6 @@
-import java.io.{BufferedWriter, ByteArrayOutputStream, DataOutputStream, File, FileNotFoundException, FileOutputStream, FileWriter}
+import java.io.{BufferedWriter, ByteArrayOutputStream, DataOutputStream, File, FileInputStream, FileNotFoundException, FileOutputStream, FileWriter, PrintWriter}
+import java.nio.file.{Files, Paths}
+import java.util
 
 import HuffmanCodec.Tree
 
@@ -12,15 +14,26 @@ class HuffmanTooling[T] {
     this
   }
 
+  private def time[R](msg: String)(block: => R): R = {
+    println(msg)
+    val t0 = System.nanoTime()
+    val result = block    // call-by-name
+    val t1 = System.nanoTime()
+    println(" --> Elapsed time: " + (t1 - t0) / 1000000 + "ms")
+    result
+  }
+
   @throws(classOf[FileNotFoundException])
   def generateCodec: HuffmanTooling[T] = {
     file match {
-      case Some(file) => codec =
-        Some(new Tree[T]()
+      case Some(file) =>
+        time(s"Generate Codec from '$file'") {
+        codec = Some(new Tree[T]()
           .buildHuffman(
             scala.io.Source.fromFile(file)
               .mkString
               .toSeq.asInstanceOf[Seq[T]]))
+        }
       case  None => throw new FileNotFoundException("There is no open file")
     }
     this
@@ -39,7 +52,10 @@ class HuffmanTooling[T] {
   def encode(s: Seq[T]): String = {
     codec match {
       case Some(codec) =>
-        HuffmanTooling.asBinaryDigits(codec.encodeSeq(s))
+        val logmsg = s.take(20).mkString("")
+        time(s"Encoding [$logmsg]...") {
+          HuffmanTooling.asBinaryDigits(codec.encodeSeq(s))
+        }
       case None => throw new Exception("Codec not loaded")
     }
   }
@@ -48,36 +64,53 @@ class HuffmanTooling[T] {
   def decode(value: String): String = {
     codec match {
       case Some(codec) =>
-        codec.decodeSeq(HuffmanTooling.asBoolList(value)).mkString("")
+        codec.decodeSeq(HuffmanTooling.asBoolList(value).toList).mkString("")
       case None => throw new Exception("Codec not loaded")
     }
   }
 
+  @throws(classOf[Exception])
+  def decodeAndSave = {
+
+    (codec, file) match {
+      case (Some(codec), Some(f)) => {
+
+        time(s"Decoding ${f.getAbsolutePath}.huff") {
+
+          val bytes = Files.readAllBytes(Paths.get(s"${f.getAbsolutePath}.huff"))
+          val bitset = util.BitSet.valueOf(bytes)
+          val bools = (0 to bitset.length).map(bitset.get(_)).toList
+
+          var content: String = null
+          time(s"   Algo. decodeSeq time ${f.getAbsolutePath}.huff") {
+            content = codec.decodeSeq(bools).mkString("")
+          }
+
+          val pw = new PrintWriter(s"${f.getAbsolutePath}.dec")
+          pw.write(content);
+          pw.close
+
+        }
+
+      }
+        case _ => throw new Exception("A file and a codec must be loaded")
+    }
+  }
 
   @throws(classOf[Exception])
   def encodeAndSave: HuffmanTooling[T] = {
-
     (codec, file) match {
-
       case (Some(codec), Some(f)) => {
-
-        val baos = new ByteArrayOutputStream()
-        val fos = new FileOutputStream(s"${f.getAbsolutePath}.huff")
-
-        def writeInts(ints: Seq[Int]): Boolean = {
-          baos.write(ints.head)
-          if (ints.size != 1) writeInts(ints.tail) else false
+        time(s"Encoding $file") {
+          val baos = new ByteArrayOutputStream()
+          val fos = new FileOutputStream(s"${f.getAbsolutePath}.huff")
+          val fileData = scala.io.Source.fromFile(f).mkString.toSeq.asInstanceOf[Seq[T]]
+          val toWrite = HuffmanTooling.asBitSet(codec.encodeSeq(fileData))
+          baos.write(toWrite.toByteArray)
+          baos.writeTo(fos)
+          baos.close()
+          fos.close()
         }
-
-        val fileData = scala.io.Source.fromFile(f).mkString.toSeq.asInstanceOf[Seq[T]]
-        val bits = codec.encodeSeq(fileData)
-        val ints: Seq[Int] = bits.grouped(8).map(HuffmanTooling.bitsAsInts(_)).toSeq
-
-        writeInts(ints)
-        baos.writeTo(fos)
-        baos.close()
-        fos.close()
-
       }
       case _ => throw new Exception("A file and a codec must be loaded")
 
@@ -115,6 +148,15 @@ class HuffmanTooling[T] {
 
 object HuffmanTooling {
   def bitsAsInts(bit8: Seq[Boolean]): Int = Integer.parseInt(asBinaryDigits(bit8), 2)
+  def asBitSet(bits: Seq[Boolean]) : util.BitSet = {
+    val bitSet = new util.BitSet(bits.length)
+    var count = 0
+    for (c <- asBinaryDigits(bits).toCharArray) {
+      if (c == '1') bitSet.set(count)
+      count += 1
+    }
+    bitSet
+  }
   def asBinaryDigits(bs: Seq[Boolean]) = bs.map(if (_) '1' else '0').mkString("")
   def asBoolList(binary: String) : Seq[Boolean] = binary.toSeq.map(x => if (x.equals('1')) true else false).toList
 }

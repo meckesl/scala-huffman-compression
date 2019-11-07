@@ -59,7 +59,7 @@ class CodecTest extends AnyFunSpec with Matchers {
       }
 
       it("decodes 'hello world' char sequence") {
-        val data = asBoolSeq("00010000010100111111000110101100")
+        val data = asBoolSeq("00010000010100111111000110101100").toList
         assert(tree.decodeSeq(data).mkString("") == "hello world");
       }
 
@@ -90,7 +90,7 @@ class CodecTest extends AnyFunSpec with Matchers {
         }
 
         it("decodes 'hello world' char sequence") {
-          val data = asBoolSeq("00010000010100111111000110101100")
+          val data = asBoolSeq("00010000010100111111000110101100").toList
           assert(loaded.decodeSeq(data).mkString("") == "hello world");
         }
 
@@ -127,7 +127,7 @@ class CodecTest extends AnyFunSpec with Matchers {
         }
 
         it("should decode an english sentence") {
-          val data = asBoolSeq(bits)
+          val data = asBoolSeq(bits).toList
           assert(tree.decodeSeq(data).mkString("") == sentence);
         }
 
@@ -143,10 +143,7 @@ class CodecTest extends AnyFunSpec with Matchers {
       val data = "&é\"'(§,è!çà)-"
       val tree = new Tree[Char].buildHuffman(data)
 
-
-
     }
 
   }
-
 }
