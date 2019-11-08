@@ -1,6 +1,5 @@
 import java.math.BigInteger
 
-import HuffmanCodec.Tree
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.Assertions._
 import org.scalatest.matchers.must.Matchers
@@ -16,7 +15,7 @@ class CodecTest extends AnyFunSpec with Matchers {
 
     describe("Basic 'hello world' String") {
 
-      val tree = new Tree[Char].buildHuffman("hello world")
+      val tree = new HuffmanTree[Char].build("hello world")
 
       it("creates encoding map") {
         assert(tree.toString == "((((e,h),o),l),((d,r),(w, )))")
@@ -66,7 +65,7 @@ class CodecTest extends AnyFunSpec with Matchers {
       describe("Builds codec from serialized encoding map") {
 
         val serializedCodec = "((((e,h),o),l),((d,r),(w, )))"
-        val loaded = new Tree[Char].fromString(serializedCodec)
+        val loaded = new HuffmanTree[Char].fromString(serializedCodec)
 
         it("ensures the codec tree serialization is identical") {
           assert(loaded.toString == serializedCodec)
@@ -100,7 +99,7 @@ class CodecTest extends AnyFunSpec with Matchers {
     describe("English 1kb text file") {
 
       val data = loadTestFileAlphanum("english_1kb.txt")
-      val tree = new Tree[Char].buildHuffman(data)
+      val tree = new HuffmanTree[Char].build(data)
 
       assert(tree.toString.equals(
           "((( ,((d,((b,((A,L),k)),c)),t)),(((((p,(0,G)),m),(l,y)),a),(((u,w)," +
@@ -141,7 +140,7 @@ class CodecTest extends AnyFunSpec with Matchers {
     describe("Special Characters") {
 
       val data = "&é\"'(§,è!çà)-"
-      val tree = new Tree[Char].buildHuffman(data)
+      val tree = new HuffmanTree[Char].build(data)
 
     }
 

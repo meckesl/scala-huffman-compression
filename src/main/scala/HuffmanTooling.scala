@@ -2,12 +2,10 @@ import java.io.{BufferedWriter, ByteArrayOutputStream, DataOutputStream, File, F
 import java.nio.file.{Files, Paths}
 import java.util
 
-import HuffmanCodec.Tree
-
 class HuffmanTooling[T] {
 
   var file: Option[File] = None
-  var codec: Option[Tree[T]] = None
+  var codec: Option[HuffmanTree[T]] = None
 
   def openFile(res: String): HuffmanTooling[T] = {
     file = Some(new File(res))
@@ -28,8 +26,8 @@ class HuffmanTooling[T] {
     file match {
       case Some(file) =>
         time(s"Generate Codec from '$file'") {
-        codec = Some(new Tree[T]()
-          .buildHuffman(
+        codec = Some(new HuffmanTree[T]()
+          .build(
             scala.io.Source.fromFile(file)
               .mkString
               .toSeq.asInstanceOf[Seq[T]]))
@@ -140,7 +138,7 @@ class HuffmanTooling[T] {
 
   def openCodec(codecPath: String): HuffmanTooling[T] = {
     val codecData = scala.io.Source.fromFile(s"$codecPath").mkString
-    codec = Some(new Tree[T]().fromString(codecData))
+    codec = Some(new HuffmanTree[T]().fromString(codecData))
     this
   }
 

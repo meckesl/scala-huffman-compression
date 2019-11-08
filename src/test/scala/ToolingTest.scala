@@ -1,6 +1,5 @@
 import java.math.BigInteger
 
-import HuffmanCodec.Tree
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.must.Matchers
 
@@ -80,7 +79,7 @@ class ToolingTest extends AnyFunSpec with Matchers {
         .saveCodec
 
       describe("Loads codec data") {
-        val tooling = new HuffmanTooling[Char]()
+        new HuffmanTooling[Char]()
           .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_10kb.txt.codec")
 
         it("then encodes the file") {
@@ -108,7 +107,7 @@ class ToolingTest extends AnyFunSpec with Matchers {
         .saveCodec
 
       describe("Loads codec data") {
-        val tooling = new HuffmanTooling[Char]()
+        new HuffmanTooling[Char]()
           .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/special.txt.codec")
 
       }

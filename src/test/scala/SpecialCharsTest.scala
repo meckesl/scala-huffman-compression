@@ -1,6 +1,5 @@
 import java.math.BigInteger
 
-import HuffmanCodec.Tree
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.must.Matchers
 
@@ -44,26 +43,18 @@ class SpecialCharsTest extends AnyFunSpec with Matchers {
           assert(r.findFirstIn("\\((b,c)") == Some("\\("))
         }
 
-        /*it("Regex 7") {
-          assert(r.findFirstIn("\\(\\((b,c)") == Some("\\(\\("))
-        }
-
-        it("Regex 8") {
-          assert(r.findFirstIn("\\(\\,(b,c)") == Some("\\(\\,"))
-        }*/
-
-        it("Regex 9") {
+        it("Regex 7") {
           assert(r.findFirstIn("c,") == Some("c"))
         }
 
       it("Should serialize") {
         val specCharString = ",()\\"
-        val tree = new Tree[Char].buildHuffman(specCharString)
+        val tree = new HuffmanTree[Char].build(specCharString)
         assert(tree.toString == """((\\,\)),(\(,\,))""")
       }
 
       it("Should parse from serialized") {
-        val loaded = new Tree[Char].fromString("""((\\,\)),(\(,\,))""")
+        val loaded = new HuffmanTree[Char].fromString("""((\\,\)),(\(,\,))""")
         assert(loaded.toString == """((\\,\)),(\(,\,))""")
       }
 
