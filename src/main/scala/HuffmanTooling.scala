@@ -7,11 +7,6 @@ class HuffmanTooling[T] {
   var file: Option[File] = None
   var codec: Option[HuffmanTree[T]] = None
 
-  def openFile(res: String): HuffmanTooling[T] = {
-    file = Some(new File(res))
-    this
-  }
-
   private def time[R](msg: String)(block: => R): R = {
     println(msg)
     val t0 = System.nanoTime()
@@ -19,6 +14,11 @@ class HuffmanTooling[T] {
     val t1 = System.nanoTime()
     println(" --> Elapsed time: " + (t1 - t0) / 1000000 + "ms")
     result
+  }
+
+  def openFile(res: String): HuffmanTooling[T] = {
+    file = Some(new File(res))
+    this
   }
 
   @throws(classOf[FileNotFoundException])
@@ -50,8 +50,7 @@ class HuffmanTooling[T] {
   def encode(s: Seq[T]): String = {
     codec match {
       case Some(codec) =>
-        val logmsg = s.take(20).mkString("")
-        time(s"Encoding [$logmsg]...") {
+        time(s"Encoding [${s.take(20).mkString("")}]...") {
           HuffmanTooling.asBinaryDigits(codec.encodeSeq(s))
         }
       case None => throw new Exception("Codec not loaded")

@@ -3,12 +3,7 @@ import java.math.BigInteger
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.must.Matchers
 
-class SpecialCharsTest extends AnyFunSpec with Matchers {
-
-  def loadTestFileRaw(f: String) = scala.io.Source.fromResource(f).mkString
-  def loadTestFileAlphanum(f: String) = scala.io.Source.fromResource(f).mkString.filter(_.toString.matches(Regex.alphanum))
-  def asBinaryDigits(bs: Seq[Boolean]) = bs.map(if (_) '1' else '0').mkString("")
-  def asBoolSeq(binary: String) : Seq[Boolean] = binary.toSeq.map(x => if (x.equals('1')) true else false).toList
+class RegexTest extends AnyFunSpec with Matchers {
 
     describe("Structure Characters") {
 
@@ -46,17 +41,6 @@ class SpecialCharsTest extends AnyFunSpec with Matchers {
         it("Regex 7") {
           assert(r.findFirstIn("c,") == Some("c"))
         }
-
-      it("Should serialize") {
-        val specCharString = ",()\\"
-        val tree = new HuffmanTree[Char].build(specCharString)
-        assert(tree.toString == """((\\,\)),(\(,\,))""")
-      }
-
-      it("Should parse from serialized") {
-        val loaded = new HuffmanTree[Char].fromString("""((\\,\)),(\(,\,))""")
-        assert(loaded.toString == """((\\,\)),(\(,\,))""")
-      }
 
       }
 

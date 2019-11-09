@@ -22,21 +22,13 @@ class ToolingTest extends AnyFunSpec with Matchers {
           assert(
             tooling.encode(
               "The little boy helps the man build a perfect encoder")
-              == "000001010111111000101010110000100010001010111000100" +
-              "001111010010111001111111001010100011011110001010011111" +
-              "100010101000110100100100001110111001000010101000100010" +
-              "110001000110111010110000001110000111010000111010010001" +
-              "111010000101101011"
+              == "01110101000001011110011010001011101110011001011111010000011100101111000001010011011000110001111101100000101111001111010011011111010001001001000100110110011111010111110001101000101101110010110000101111101001101100000011110010100010"
           )
         }
 
         it("then decodes it") {
           assert(
-            tooling.decode("00000101011111100010101011000010001" +
-              "0001010111000100001111010010111001111111001010100011011" +
-              "11000101001111110001010100011010010010000111011100100001" +
-              "01010001000101100010001101110101100000011100001110100001" +
-              "11010010001111010000101101011") ==
+            tooling.decode("01110101000001011110011010001011101110011001011111010000011100101111000001010011011000110001111101100000101111001111010011011111010001001001000100110110011111010111110001101000101101110010110000101111101001101100000011110010100010") ==
               "The little boy helps the man build a perfect encoder")
         }
 
@@ -93,6 +85,34 @@ class ToolingTest extends AnyFunSpec with Matchers {
           new HuffmanTooling[Char]()
             .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_10kb.txt.codec")
             .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_10kb.txt")
+            .decodeAndSave
+        }
+
+      }
+    }
+
+    describe("English-50kb -> Generates and stores Codec data") {
+
+      new HuffmanTooling[Char]()
+        .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_50kb.txt")
+        .generateCodec
+        .saveCodec
+
+      describe("Loads codec data") {
+        new HuffmanTooling[Char]()
+          .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_50kb.txt.codec")
+
+        it("then encodes the file") {
+          new HuffmanTooling[Char]()
+            .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_50kb.txt.codec")
+            .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_50kb.txt")
+            .encodeAndSave
+        }
+
+        it("then decodes a file") {
+          new HuffmanTooling[Char]()
+            .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_50kb.txt.codec")
+            .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_50kb.txt")
             .decodeAndSave
         }
 

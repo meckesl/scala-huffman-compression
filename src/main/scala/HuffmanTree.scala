@@ -8,20 +8,19 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
 
     def build(xs: Seq[T]): HuffmanTree[T] = {
 
-      def bu(xsu: Seq[TreeNode[T]]): TreeNode[T] = {
-        val sortedXs = xsu.sortWith(_.weight.get < _.weight.get).toList
-        sortedXs match {
+      def huffmanAlgorithm(xs: Seq[TreeNode[T]]): TreeNode[T] = {
+          xs.sortWith(_.weight.get < _.weight.get).toList match {
           case head::Nil => head
           case head::tail =>
-            sortedXs.take(2) match { case List(a, b) =>
+            (head, tail.head) match { case (a, b) =>
               val weight = Some(a.weight.get + b.weight.get)
               val parent = TreeNode(None, weight, a, b)
-              bu(parent +: sortedXs.drop(2))
+              huffmanAlgorithm(parent +: tail.tail)
             }
         }
       }
 
-      bu {
+      huffmanAlgorithm {
         xs.distinct
           .map(e => (e, xs.count(_ equals e)))
           .map { case (node: T, weight: Int) =>
@@ -36,8 +35,8 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
       this match {
         case TreeNode(n, w, l, r) =>
           if (n.contains(data)) acc else {
-            try r.encode(data, acc :+ true) catch { case e: Exception =>
-              try l.encode(data, acc :+ false) catch { case e: Exception =>
+            try r.encode(data, acc :+ true) catch { case e: NoSuchElementException =>
+              try l.encode(data, acc :+ false) catch { case e: NoSuchElementException =>
                 throw e
               }
             }
@@ -68,18 +67,18 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
     final def decodeSeq(binary: List[Boolean], acc: Seq[T] = Seq(), root: HuffmanTree[T] = this) : Seq[T] = {
       this match {
         case TreeNode(n, w, l, r) if n.nonEmpty =>
-            binary match {
-              case x::xs =>  root.decodeSeq(binary, acc :+ n.get, root )
-              case Nil => acc :+ n.get
-            }
+          binary match {
+            case x::xs =>  root.decodeSeq(binary, acc:+n.get, root )
+            case Nil => acc:+n.get
+          }
         case TreeNode(n, w, l, r) =>
-            binary match {
-              case h::tail if !h => l.decodeSeq(tail, acc, root)
-              case h::tail if h => r.decodeSeq(tail, acc, root)
-              case Nil => acc
-            }
+          binary match {
+            case x::xs if x => r.decodeSeq(xs, acc, root)
+            case x::xs if !x => l.decodeSeq(xs, acc, root)
+            case Nil => acc
+          }
         case EmptyNode() =>
-          throw new NoSuchElementException("Empty node should never be reached when decoding huffman code")
+          Seq[T]()
       }
     }
 
