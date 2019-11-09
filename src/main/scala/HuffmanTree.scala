@@ -1,4 +1,6 @@
 import scala.annotation.tailrec
+import com.github.benmanes.caffeine.cache.Caffeine
+import scalacache._
 
 case class EmptyNode[T]() extends HuffmanTree[T]
 case class TreeNode[T](node: Option[T], weight: Option[Int],
@@ -31,20 +33,31 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
 
     }
 
+    val cache = Caffeine.newBuilder.build[T, Entry[Seq[Boolean]]]
+
     @throws(classOf[NoSuchElementException])
     def encode(data: T, acc: Seq[Boolean] = Seq[Boolean]()): Seq[Boolean] = {
-      this match {
-        case TreeNode(n, w, l, r) =>
-          if (n.contains(data)) acc else {
-            try r.encode(data, acc :+ true) catch { case e: NoSuchElementException =>
-              try l.encode(data, acc :+ false) catch { case e: NoSuchElementException =>
-                throw e
+
+      cache.getIfPresent(data) match {
+        case null => {
+          val bits = this match {
+            case TreeNode(n, w, l, r) =>
+              if (n.contains(data)) acc else {
+                try r.encode(data, acc :+ true) catch { case e: NoSuchElementException =>
+                  try l.encode(data, acc :+ false) catch { case e: NoSuchElementException =>
+                    throw e
+                  }
+                }
               }
-            }
+            case EmptyNode() =>
+              throw new NoSuchElementException(data.toString)
           }
-        case EmptyNode() =>
-          throw new NoSuchElementException(data.toString)
+          cache.put(data, Entry(bits, expiresAt = None))
+          bits
+        }
+        case v => v.value
       }
+
     }
 
     def encodeSeq(data: Seq[T]): Seq[Boolean] = data.flatMap(encode(_))
