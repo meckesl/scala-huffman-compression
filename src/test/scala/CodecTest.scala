@@ -7,64 +7,61 @@ import org.scalatest.matchers.must.Matchers
 class CodecTest extends AnyFunSpec with Matchers {
 
   def loadTestFileRaw(f: String) = scala.io.Source.fromResource(f).mkString
-  def loadTestFileAlphanum(f: String) = scala.io.Source.fromResource(f).mkString.filter(_.toString.matches(Regex.alphanum))
   def asBinaryDigits(bs: Seq[Boolean]) = bs.map(if (_) '1' else '0').mkString("")
   def asBoolSeq(binary: String) : Seq[Boolean] = binary.toSeq.map(x => if (x.equals('1')) true else false).toList
-
-  describe("Huffman Codec") {
 
     describe("Basic 'hello world' String") {
 
       val tree = new HuffmanTree[Char].build("hello world")
 
       it("creates encoding map") {
-        assert(tree.toString == "((((e,h),o),l),((d,r),(w, )))")
+        assert(tree.toString == "(((r,d),( ,w)),(l,((h,e),o)))")
       }
 
       it("encodes 'h' char (4 bits)") {
         val encoded = asBinaryDigits(tree.encode('h'))
-        assert(encoded == "0001");
+        assert(encoded == "1100");
       }
 
       it("encodes 'l' char (2 bits)") {
         val encoded = asBinaryDigits(tree.encode('l'))
-        assert(encoded == "01");
+        assert(encoded == "10");
       }
 
       it("encodes ' ' char (3 bits)") {
         val encoded = asBinaryDigits(tree.encode(' '))
-        assert(encoded == "111");
+        assert(encoded == "010");
       }
 
       it("decodes 'h' char") {
-        val code = asBoolSeq("0001")
+        val code = asBoolSeq("1100")
         assert(tree.decode(code).contains('h'));
       }
 
       it("decodes 'l' char") {
-        val code = asBoolSeq("01")
+        val code = asBoolSeq("10")
         assert(tree.decode(code).contains('l'));
       }
 
       it("decodes ' ' char") {
-        val code = asBoolSeq("111")
+        val code = asBoolSeq("010")
         assert(tree.decode(code).contains(' '));
       }
 
       it("encodes 'hello world' char sequence") {
         val charSeq = "hello world"
         val encoded = asBinaryDigits(tree.encodeSeq(charSeq))
-        assert(encoded == "00010000010100111111000110101100");
+        assert(encoded == "11001101101011101001111100010001");
       }
 
       it("decodes 'hello world' char sequence") {
-        val data = asBoolSeq("00010000010100111111000110101100").toList
+        val data = asBoolSeq("11001101101011101001111100010001").toList
         assert(tree.decodeSeq(data).mkString("") == "hello world");
       }
 
       describe("Builds codec from serialized encoding map") {
 
-        val serializedCodec = "((((e,h),o),l),((d,r),(w, )))"
+        val serializedCodec = "(((r,d),( ,w)),(l,((h,e),o)))"
         val loaded = new HuffmanTree[Char].fromString(serializedCodec)
 
         it("ensures the codec tree serialization is identical") {
@@ -74,22 +71,22 @@ class CodecTest extends AnyFunSpec with Matchers {
 
         it("encodes 'h' char (4 bits)") {
           val encoded = asBinaryDigits(loaded.encode('h'))
-          assert(encoded == "0001");
+          assert(encoded == "1100");
         }
 
         it("decodes 'h' char") {
-          val code = asBoolSeq("0001")
+          val code = asBoolSeq("1100")
           assert(loaded.decode(code).contains('h'));
         }
 
         it("encodes 'hello world' char sequence") {
           val charSeq = "hello world"
           val encoded = asBinaryDigits(loaded.encodeSeq(charSeq))
-          assert(encoded == "00010000010100111111000110101100");
+          assert(encoded == "11001101101011101001111100010001");
         }
 
         it("decodes 'hello world' char sequence") {
-          val data = asBoolSeq("00010000010100111111000110101100").toList
+          val data = asBoolSeq("11001101101011101001111100010001").toList
           assert(loaded.decodeSeq(data).mkString("") == "hello world");
         }
 
@@ -98,25 +95,27 @@ class CodecTest extends AnyFunSpec with Matchers {
 
     describe("English 1kb text file") {
 
-      val data = loadTestFileAlphanum("english_1kb.txt")
+      val data = loadTestFileRaw("english_1kb.txt")
       val tree = new HuffmanTree[Char].build(data)
 
-      assert(tree.toString.equals(
-          "((( ,((d,((b,((A,L),k)),c)),t)),(((((p,(0,G)),m),(l,y)),a),(((u,w)," +
-            "(((((7,S),(B,q)),((4,j),(3,1))),(((O,z),(R,H)),((W,E),I)))," +
-            "(((C,F),M),v))),i))),(((n,o),e),((r,s)," +
-            "(h,((f,((T,(6,D)),(x,5))),g)))))"))
+      it ("should create codec tree") {
+        assert(tree.toString ==
+          "((((h,s),(r,o)),(e,(n,((((((‘,E),6),((-,R),(W,H))),v),((((7,D)," +
+            "(B,S)),T),(((1,:),(z,O)),((4,q),(3,j))))),(w,(((I,L),G),(0,(“,”)" +
+            "))))))),(((i,((u,y),(l,m))),(a,t)),((((c,(((A,5),k),p)),d)," +
+            "(((b,.),g),((\\,,((x,(F,C)),(’,M))),(f,\n)))), )))")
+      }
 
         val sentence = "Hello I am the best string in the world of strings " +
           "and I am here to prove full sentences can be coded and decoded"
 
-        val bits = "01101010111010100100100101001000011010111000010101000100" +
-          "0001111101010000010100101110100110001101001111000111100011111000011110000000" +
-          "01111101010000110011001110001001000100000100111110000011010011110001111000111111" +
-          "101000010110000010000001101011100001010100010001110101110010100000111001000010" +
-          "00001100100101101111010001111000110000100100100100001101101100000111011000001011" +
-          "101110100000101101011000000001010010100000101110010010010100100000010110000" +
-          "01000000010010100101110010010010100100"
+        val bits = "011100011101010011010011000111110111110001111010100111111101100" +
+          "000101111101000010000110111110001101100101000011011010111110000110111101" +
+          "100000101110111100011001010011011001111001111011101110001101100101000011" +
+          "011010100011111010011011001111011111000111101010011111100000100010010111" +
+          "101100111111100011001000110111001010111110111010010010011010011011100010" +
+          "100110101101001101100000100001111110000101001101111101000010111110000001" +
+          "1110010101100111110100110110011111100101011000000111100101011001"
 
         val bitsStdEncoding = new BigInteger(sentence.getBytes()).toString(2)
 
@@ -143,6 +142,4 @@ class CodecTest extends AnyFunSpec with Matchers {
       val tree = new HuffmanTree[Char].build(data)
 
     }
-
-  }
 }

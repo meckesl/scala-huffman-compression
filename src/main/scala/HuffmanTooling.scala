@@ -8,11 +8,11 @@ class HuffmanTooling[T] {
   var codec: Option[HuffmanTree[T]] = None
 
   private def time[R](msg: String)(block: => R): R = {
-    println(msg)
+    println(" --> " + msg)
     val t0 = System.nanoTime()
     val result = block    // call-by-name
     val t1 = System.nanoTime()
-    println(" --> Elapsed time: " + (t1 - t0) / 1000000 + "ms")
+    println(" <-- Elapsed time: " + (t1 - t0) / 1000000 + "ms")
     result
   }
 
@@ -79,9 +79,7 @@ class HuffmanTooling[T] {
           val bools = (0 to bitset.length).map(bitset.get(_)).toList
 
           var content: String = null
-          time(s"   Algo. decodeSeq time ${f.getAbsolutePath}.huff") {
-            content = codec.decodeSeq(bools).mkString("")
-          }
+          content = codec.decodeSeq(bools).mkString("")
 
           val pw = new PrintWriter(s"${f.getAbsolutePath}.dec")
           pw.write(content);

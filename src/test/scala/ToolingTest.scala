@@ -134,22 +134,6 @@ class ToolingTest extends AnyFunSpec with Matchers {
 
     }
 
-    /*describe("UTF8 -> Generates and stores Codec data") {
-
-      new HuffmanTooling[Char]()
-        .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/html_UTF8_250kb.txt")
-        .generateCodec
-        .saveCodec
-
-      describe("Encodes") {
-        val tooling = new HuffmanTooling[Char]()
-          .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/html_UTF8_250kb.txt.codec")
-          .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/html_UTF8_250kb.txt")
-          .encodeAndSave
-      }
-
-    }*/
-
   }
 
 

@@ -8,6 +8,7 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
 
     def build(xs: Seq[T]): HuffmanTree[T] = {
 
+      @tailrec
       def huffmanAlgorithm(xs: Seq[TreeNode[T]]): TreeNode[T] = {
           xs.sortWith(_.weight.get < _.weight.get).toList match {
           case head::Nil => head
@@ -74,7 +75,7 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
         case TreeNode(n, w, l, r) =>
           binary match {
             case x::xs if x => r.decodeSeq(xs, acc, root)
-            case x::xs if !x => l.decodeSeq(xs, acc, root)
+            case x::xs => l.decodeSeq(xs, acc, root)
             case Nil => acc
           }
         case EmptyNode() =>

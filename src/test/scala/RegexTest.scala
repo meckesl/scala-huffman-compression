@@ -23,23 +23,23 @@ class RegexTest extends AnyFunSpec with Matchers {
         }
 
         it("Regex 3") {
-          assert(r.findFirstIn("((b,c)") == Some("b"))
+          assert(r.findFirstIn("((b,c)").contains("b"))
         }
 
         it("Regex 4") {
-          assert(r.findFirstIn(")(b,c)") == Some("b"))
+          assert(r.findFirstIn(")(b,c)").contains("b"))
         }
 
         it("Regex 5") {
-          assert(r.findFirstIn("\\)(b,c)") == Some("\\)"))
+          assert(r.findFirstIn("\\)(b,c)").contains("\\)"))
         }
 
         it("Regex 6") {
-          assert(r.findFirstIn("\\((b,c)") == Some("\\("))
+          assert(r.findFirstIn("\\((b,c)").contains("\\("))
         }
 
         it("Regex 7") {
-          assert(r.findFirstIn("c,") == Some("c"))
+          assert(r.findFirstIn("c,").contains("c"))
         }
 
       }
