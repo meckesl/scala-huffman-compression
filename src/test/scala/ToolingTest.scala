@@ -10,13 +10,13 @@ class ToolingTest extends AnyFunSpec with Matchers {
     describe("English-1kb -> Generates and stores Codec data") {
 
       new HuffmanTooling[Char]()
-        .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_1kb.txt")
+        .openFile("src/test/resources/english_1kb.txt")
         .generateCodec
         .saveCodec
 
       describe("Loads codec data") {
         val tooling = new HuffmanTooling[Char]()
-          .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_1kb.txt.codec")
+          .openCodec("src/test/resources/english_1kb.txt.codec")
 
         it("then encodes some text") {
           assert(
@@ -38,25 +38,25 @@ class ToolingTest extends AnyFunSpec with Matchers {
     describe("English-1kb") {
 
       new HuffmanTooling[Char]()
-        .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_1kb.txt")
+        .openFile("src/test/resources/english_1kb.txt")
         .generateCodec
         .saveCodec
 
       describe("Loads codec data") {
         val tooling = new HuffmanTooling[Char]()
-          .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_1kb.txt.codec")
+          .openCodec("src/test/resources/english_1kb.txt.codec")
 
         it("then encodes the file") {
           new HuffmanTooling[Char]()
-            .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_1kb.txt.codec")
-            .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_1kb.txt")
+            .openCodec("src/test/resources/english_1kb.txt.codec")
+            .openFile("src/test/resources/english_1kb.txt")
             .encodeAndSave
         }
 
         it("then decodes a file") {
           new HuffmanTooling[Char]()
-            .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_1kb.txt.codec")
-            .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_1kb.txt")
+            .openCodec("src/test/resources/english_1kb.txt.codec")
+            .openFile("src/test/resources/english_1kb.txt")
             .decodeAndSave
         }
 
@@ -66,25 +66,25 @@ class ToolingTest extends AnyFunSpec with Matchers {
     describe("English-10kb -> Generates and stores Codec data") {
 
       new HuffmanTooling[Char]()
-        .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_10kb.txt")
+        .openFile("src/test/resources/english_10kb.txt")
         .generateCodec
         .saveCodec
 
       describe("Loads codec data") {
         new HuffmanTooling[Char]()
-          .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_10kb.txt.codec")
+          .openCodec("src/test/resources/english_10kb.txt.codec")
 
         it("then encodes the file") {
           new HuffmanTooling[Char]()
-            .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_10kb.txt.codec")
-            .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_10kb.txt")
+            .openCodec("src/test/resources/english_10kb.txt.codec")
+            .openFile("src/test/resources/english_10kb.txt")
             .encodeAndSave
         }
 
         it("then decodes a file") {
           new HuffmanTooling[Char]()
-            .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_10kb.txt.codec")
-            .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_10kb.txt")
+            .openCodec("src/test/resources/english_10kb.txt.codec")
+            .openFile("src/test/resources/english_10kb.txt")
             .decodeAndSave
         }
 
@@ -94,22 +94,22 @@ class ToolingTest extends AnyFunSpec with Matchers {
     describe("English-50kb -> Generates and stores Codec data") {
 
       val tooling = new HuffmanTooling[Char]()
-        .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_50kb.txt")
+        .openFile("src/test/resources/english_50kb.txt")
         .generateCodec
         .saveCodec
 
       describe("Loads codec data") {
-        tooling.openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_50kb.txt.codec")
+        tooling.openCodec("src/test/resources/english_50kb.txt.codec")
 
         it("then encodes the file") {
           tooling
-            .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_50kb.txt")
+            .openFile("src/test/resources/english_50kb.txt")
             .encodeAndSave
         }
 
         it("then decodes a file") {
           tooling
-            .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_50kb.txt")
+            .openFile("src/test/resources/english_50kb.txt")
             .decodeAndSave
         }
 
@@ -119,22 +119,22 @@ class ToolingTest extends AnyFunSpec with Matchers {
     describe("English-500kb -> Generates and stores Codec data") {
 
       val tooling = new HuffmanTooling[Char]()
-        .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_500kb.txt")
+        .openFile("src/test/resources/english_500kb.txt")
         .generateCodec
         .saveCodec
 
       describe("Loads codec data") {
-        tooling.openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_500kb.txt.codec")
+        tooling.openCodec("src/test/resources/english_500kb.txt.codec")
 
         it("then encodes the file") {
           tooling
-            .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_500kb.txt")
+            .openFile("src/test/resources/english_500kb.txt")
             .encodeAndSave
         }
 
         it("then decodes a file") {
           tooling
-            .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_500kb.txt")
+            .openFile("src/test/resources/english_500kb.txt")
             .decodeAndSave
         }
 
@@ -169,13 +169,13 @@ class ToolingTest extends AnyFunSpec with Matchers {
     describe("SpecialChars -> Generates and stores Codec data") {
 
       new HuffmanTooling[Char]()
-        .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/special.txt")
+        .openFile("src/test/resources/special.txt")
         .generateCodec
         .saveCodec
 
       describe("Loads codec data") {
         new HuffmanTooling[Char]()
-          .openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/special.txt.codec")
+          .openCodec("src/test/resources/special.txt.codec")
 
       }
 
