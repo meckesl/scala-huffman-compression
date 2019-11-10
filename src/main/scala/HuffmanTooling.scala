@@ -8,11 +8,10 @@ class HuffmanTooling[T] {
   var codec: Option[HuffmanTree[T]] = None
 
   private def time[R](msg: String)(block: => R): R = {
-    println(" --> " + msg)
     val t0 = System.nanoTime()
     val result = block
     val t1 = System.nanoTime()
-    println(" <-- Elapsed time: " + (t1 - t0) / 1000000 + "ms")
+    println(msg + " -> " + (t1 - t0) / 1000000 + "ms")
     result
   }
 
@@ -29,8 +28,7 @@ class HuffmanTooling[T] {
         codec = Some(new HuffmanTree[T]()
           .build(
             scala.io.Source.fromFile(file)
-              .mkString
-              .toSeq.asInstanceOf[Seq[T]]))
+              .toList.asInstanceOf[List[T]]))
         }
       case  None => throw new FileNotFoundException("There is no open file")
     }

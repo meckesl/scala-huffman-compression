@@ -4,15 +4,15 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.Assertions._
 import org.scalatest.matchers.must.Matchers
 
-class CodecTest extends AnyFunSpec with Matchers {
+class CharCodecTest extends AnyFunSpec with Matchers {
 
-  def loadTestFileRaw(f: String) = scala.io.Source.fromResource(f).mkString
+  def loadTestFileRaw(f: String) = scala.io.Source.fromResource(f).toList
   def asBinaryDigits(bs: Seq[Boolean]) = bs.map(if (_) '1' else '0').mkString("")
   def asBoolSeq(binary: String) : Seq[Boolean] = binary.toSeq.map(x => if (x.equals('1')) true else false).toList
 
     describe("Basic 'hello world' String") {
 
-      val tree = new HuffmanTree[Char].build("hello world")
+      val tree = new HuffmanTree[Char].build("hello world".toCharArray.toList)
 
       it("creates encoding map") {
         assert(tree.toString == "(((r,d),( ,w)),(l,((h,e),o)))")
@@ -139,7 +139,7 @@ class CodecTest extends AnyFunSpec with Matchers {
     describe("Special Characters") {
 
       val data = "&é\"'(§,è!çà)-"
-      val tree = new HuffmanTree[Char].build(data)
+      val tree = new HuffmanTree[Char].build(data.toCharArray.toList)
 
     }
 }

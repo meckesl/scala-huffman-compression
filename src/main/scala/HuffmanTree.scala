@@ -3,7 +3,6 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import scalacache._
 
 import scala.collection.immutable.Queue
-import scala.collection.mutable.ListBuffer
 
 case class EmptyNode[T]() extends HuffmanTree[T]
 case class TreeNode[T](node: Option[T], weight: Option[Int],
@@ -11,7 +10,7 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
 
   class HuffmanTree[T] {
 
-    def build(xs: Seq[T]): HuffmanTree[T] = {
+    def build(xs: List[T]): HuffmanTree[T] = {
 
       @tailrec
       def huffmanAlgorithm(xs: Seq[TreeNode[T]]): TreeNode[T] = {
@@ -32,7 +31,6 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
           .map { case (node: T, weight: Int) =>
             TreeNode(Some(node), Some(weight), EmptyNode(), EmptyNode())
           }
-          .toList
       }
 
     }
