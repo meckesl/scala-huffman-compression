@@ -77,7 +77,6 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
     }
 
     @tailrec
-    @throws(classOf[NoSuchElementException])
     final def decodeSeq(binary: List[Boolean], acc: Seq[T] = Seq(), root: HuffmanTree[T] = this) : Seq[T] = {
       this match {
         case TreeNode(n, w, l, r) if n.nonEmpty =>

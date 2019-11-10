@@ -10,7 +10,7 @@ class HuffmanTooling[T] {
   private def time[R](msg: String)(block: => R): R = {
     println(" --> " + msg)
     val t0 = System.nanoTime()
-    val result = block    // call-by-name
+    val result = block
     val t1 = System.nanoTime()
     println(" <-- Elapsed time: " + (t1 - t0) / 1000000 + "ms")
     result
