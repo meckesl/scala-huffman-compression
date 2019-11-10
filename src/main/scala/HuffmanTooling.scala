@@ -145,11 +145,7 @@ object HuffmanTooling {
   def bitsAsInts(bit8: Seq[Boolean]): Int = Integer.parseInt(asBinaryDigits(bit8), 2)
   def asBitSet(bits: Seq[Boolean]) : util.BitSet = {
     val bitSet = new util.BitSet(bits.length)
-    var count = 0
-    for (c <- asBinaryDigits(bits).toCharArray) {
-      if (c == '1') bitSet.set(count)
-      count += 1
-    }
+    bits.zipWithIndex.foreach(x => if (x._1) bitSet.set(x._2))
     bitSet
   }
   def asBinaryDigits(bs: Seq[Boolean]) = bs.map(if (_) '1' else '0').mkString("")

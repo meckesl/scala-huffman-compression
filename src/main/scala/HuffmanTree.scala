@@ -2,6 +2,9 @@ import scala.annotation.tailrec
 import com.github.benmanes.caffeine.cache.Caffeine
 import scalacache._
 
+import scala.collection.immutable.Queue
+import scala.collection.mutable.ListBuffer
+
 case class EmptyNode[T]() extends HuffmanTree[T]
 case class TreeNode[T](node: Option[T], weight: Option[Int],
                     left: HuffmanTree[T], right: HuffmanTree[T]) extends HuffmanTree[T]
@@ -12,7 +15,7 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
 
       @tailrec
       def huffmanAlgorithm(xs: Seq[TreeNode[T]]): TreeNode[T] = {
-          xs.sortWith(_.weight.get < _.weight.get).toList match {
+          xs.sortWith(_.weight.get < _.weight.get) match {
           case head::Nil => head
           case head::tail =>
             (head, tail.head) match { case (a, b) =>
@@ -29,6 +32,7 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
           .map { case (node: T, weight: Int) =>
             TreeNode(Some(node), Some(weight), EmptyNode(), EmptyNode())
           }
+          .toList
       }
 
     }
@@ -77,11 +81,11 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
     }
 
     @tailrec
-    final def decodeSeq(binary: List[Boolean], acc: Seq[T] = Seq(), root: HuffmanTree[T] = this) : Seq[T] = {
+    final def decodeSeq(binary: List[Boolean], acc: Queue[T] = Queue(), root: HuffmanTree[T] = this) : Seq[T] = {
       this match {
         case TreeNode(n, w, l, r) if n.nonEmpty =>
           binary match {
-            case x::xs =>  root.decodeSeq(binary, acc:+n.get, root )
+            case x::xs =>  root.decodeSeq(binary, acc:+n.get, root)
             case Nil => acc:+n.get
           }
         case TreeNode(n, w, l, r) =>

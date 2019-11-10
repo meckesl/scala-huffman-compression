@@ -108,8 +108,33 @@ class ToolingTest extends AnyFunSpec with Matchers {
         }
 
         it("then decodes a file") {
-          new HuffmanTooling[Char]()
+          tooling
             .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_50kb.txt")
+            .decodeAndSave
+        }
+
+      }
+    }
+
+    describe("English-500kb -> Generates and stores Codec data") {
+
+      val tooling = new HuffmanTooling[Char]()
+        .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_500kb.txt")
+        .generateCodec
+        .saveCodec
+
+      describe("Loads codec data") {
+        tooling.openCodec("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_500kb.txt.codec")
+
+        it("then encodes the file") {
+          tooling
+            .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_500kb.txt")
+            .encodeAndSave
+        }
+
+        it("then decodes a file") {
+          tooling
+            .openFile("/Users/meckes/Desktop/btsync-projects/Encoder/src/test/resources/english_500kb.txt")
             .decodeAndSave
         }
 
