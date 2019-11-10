@@ -11,7 +11,6 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
   class HuffmanTree[T] {
 
     def build(xs: List[T]): HuffmanTree[T] = {
-
       @tailrec
       def huffmanAlgorithm(xs: Seq[TreeNode[T]]): TreeNode[T] = {
           xs.sortWith(_.weight.get < _.weight.get) match {
@@ -24,7 +23,6 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
             }
         }
       }
-
       huffmanAlgorithm {
         xs.distinct
           .map(e => (e, xs.count(_ equals e)))
@@ -32,7 +30,6 @@ case class TreeNode[T](node: Option[T], weight: Option[Int],
             TreeNode(Some(node), Some(weight), EmptyNode(), EmptyNode())
           }
       }
-
     }
 
     val cache = Caffeine.newBuilder.build[T, Entry[Seq[Boolean]]]
