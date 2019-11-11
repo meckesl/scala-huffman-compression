@@ -1,6 +1,7 @@
 import java.io.{BufferedWriter, ByteArrayOutputStream, File, FileNotFoundException, FileOutputStream, FileWriter, PrintWriter}
 import java.nio.file.{Files, Paths}
 import java.util
+import scala.collection.parallel.CollectionConverters._
 
 class HuffmanTooling[T] {
 
@@ -47,17 +48,19 @@ class HuffmanTooling[T] {
   }
 
   @throws(classOf[Exception])
-  def encodeParallel(s: Seq[T]): Seq[Boolean] = {
-    import scala.collection.parallel.CollectionConverters._
-    Codec match {
-      case Some(codec) =>
-        val cores = Runtime.getRuntime.availableProcessors
-        s.grouped(s.size / cores).zipWithIndex.toList.par.flatMap(threadSeq => {
-          time(s"Thread #${threadSeq._2 + 1} -> encoding [${threadSeq._1.take(20).mkString("")}]...") {
-            codec.encodeSeq(threadSeq._1)
-          }
-        }).toList
-      case None => throw new Exception("Codec not loaded")
+  def encodeParallel(s: List[T]): Seq[Boolean] = {
+      Codec match {
+        case Some(codec) =>
+          val cores = Runtime.getRuntime.availableProcessors
+          val size = 1 + s.size / cores
+          time(s"// Encoding with $cores cores ($size chars out of ${s.size}) ") {
+            s.grouped(size).zipWithIndex.toSeq.par.flatMap(threadSeq => {
+              time(s"Thread #${threadSeq._2 + 1} -> encoding [${threadSeq._1.take(20).mkString("")}]...") {
+                codec.encodeSeq(threadSeq._1)
+              }
+            })
+          }.seq
+        case None => throw new Exception("Codec not loaded")
     }
   }
 
@@ -96,7 +99,7 @@ class HuffmanTooling[T] {
         time(s"Encoding $File") {
           val baos = new ByteArrayOutputStream()
           val fos = new FileOutputStream(s"${f.getAbsolutePath}.huff")
-          val fileData = scala.io.Source.fromFile(f).mkString.toSeq.asInstanceOf[Seq[T]]
+          val fileData = scala.io.Source.fromFile(f).mkString.toList.asInstanceOf[List[T]]
           val toWrite = HuffmanTooling.asBitSet(encodeParallel(fileData))
           baos.write(toWrite.toByteArray)
           baos.writeTo(fos)
