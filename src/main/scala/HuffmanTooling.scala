@@ -52,9 +52,9 @@ class HuffmanTooling[T] {
     Codec match {
       case Some(codec) =>
         val cores = Runtime.getRuntime.availableProcessors
-        s.grouped(s.size / cores).toList.par.flatMap(threadSeq => {
-          time(s"Encoding [${threadSeq.take(20).mkString("")}]...") {
-            codec.encodeSeq(threadSeq)
+        s.grouped(s.size / cores).zipWithIndex.toList.par.flatMap(threadSeq => {
+          time(s"Thread #${threadSeq._2 + 1} -> encoding [${threadSeq._1.take(20).mkString("")}]...") {
+            codec.encodeSeq(threadSeq._1)
           }
         }).toList
       case None => throw new Exception("Codec not loaded")

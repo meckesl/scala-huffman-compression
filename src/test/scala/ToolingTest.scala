@@ -113,6 +113,31 @@ class ToolingTest extends AnyFunSpec with Matchers {
       }
     }
 
+    describe("English-900kb -> Generates and stores Codec data") {
+
+      val tooling = new HuffmanTooling[Char]()
+        .openFile("src/test/resources/english_900kb.txt")
+        .generateCodec
+        .saveCodec
+
+      describe("Loads codec data") {
+        tooling.openCodec("src/test/resources/english_900kb.txt.codec")
+
+        it("then encodes the file") {
+          tooling
+            .openFile("src/test/resources/english_900kb.txt")
+            .encodeAndSave
+        }
+
+        it("then decodes a file") {
+          tooling
+            .openFile("src/test/resources/english_900kb.txt")
+            .decodeAndSave
+        }
+
+      }
+    }
+
     /*describe("Unicode-250kb -> Generates and stores Codec data") {
 
       val tooling = new HuffmanTooling[Char]()
