@@ -5,8 +5,6 @@ import scala.collection.parallel.CollectionConverters._
 
 class HuffmanTooling[T] {
 
-
-
   var File: Option[File] = None
   var Codec: Option[HuffmanTree[T]] = None
 
