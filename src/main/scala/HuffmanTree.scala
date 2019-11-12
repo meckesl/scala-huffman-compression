@@ -6,15 +6,28 @@ import scalacache._
 
 import scala.collection.immutable.Queue
 
+class TData(da: Array[Byte], hash:String) {
+  def getBytes() = da
+  override def hashCode(): Int = hash.hashCode
+  override def toString: String = hash
+}
+
 case class EmptyNode() extends HuffmanTree
-case class TreeNode(node: Option[Byte], weight: Option[Int],
+case class TreeNode(node: Option[TData], weight: Option[Int],
                     left: HuffmanTree, right: HuffmanTree) extends HuffmanTree
 
-  class HuffmanTree() {
+  class HuffmanTree {
 
-    type HData = Byte
+    def fragments(t: HuffmanTree): List[TData] = {
+      this match {
+        case TreeNode(d, w, l, r) if d.nonEmpty => (fragments(l) ::: fragments(r)) :+ d.get
+        case TreeNode(d, w, l, r) if d.isEmpty => (fragments(l) ::: fragments(r))
+        case EmptyNode() => List[TData]()
+      }
+    }
 
-    def build(xs: Array[Byte]): HuffmanTree = {
+    def build(xs: List[TData]): HuffmanTree = {
+
       @tailrec
       def huffmanAlgorithm(xs: Seq[TreeNode]): TreeNode = {
           xs.sortWith(_.weight.get < _.weight.get) match {
@@ -25,26 +38,28 @@ case class TreeNode(node: Option[Byte], weight: Option[Int],
               huffmanAlgorithm(parent +: tail)
         }
       }
+
       huffmanAlgorithm {
-        xs.toList
-          .distinct
-          .map(e => (e, xs.count(_ equals e)))
-          .map { case (node: HData, weight: Int) =>
+        xs.distinctBy(_.hashCode())
+          .map(e => (e, xs.count(_.hashCode() equals e.hashCode())))
+          .map { case (node: TData, weight: Int) =>
             TreeNode(Some(node), Some(weight), EmptyNode(), EmptyNode())
           }
       }
     }
 
-    val cache = Caffeine.newBuilder.build[HData, Entry[Seq[Boolean]]]
+    val cache = Caffeine.newBuilder.build[String, Entry[Seq[Boolean]]]
 
     @throws(classOf[NoSuchElementException])
-    def encode(data: HData, acc: Seq[Boolean] = Seq[Boolean]()): Seq[Boolean] = {
+    def encode(data: TData, acc: Seq[Boolean] = Seq[Boolean]()): Seq[Boolean] = {
 
-      cache.getIfPresent(data) match {
+      cache.getIfPresent(data.toString) match {
         case null => {
           val bits = this match {
             case TreeNode(n, w, l, r) =>
-              if (n.contains(data)) acc else {
+              if (n.map(_.hashCode()).contains(data.hashCode()))
+                acc
+              else {
                 try r.encode(data, acc :+ true) catch { case e: NoSuchElementException =>
                   try l.encode(data, acc :+ false) catch { case e: NoSuchElementException =>
                     throw e
@@ -52,9 +67,9 @@ case class TreeNode(node: Option[Byte], weight: Option[Int],
                 }
               }
             case EmptyNode() =>
-              throw new NoSuchElementException
+              throw new NoSuchElementException(data.toString)
           }
-          cache.put(data, Entry(bits, expiresAt = None))
+          cache.put(data.toString, Entry(bits, expiresAt = None))
           bits
         }
         case v => v.value
@@ -62,10 +77,11 @@ case class TreeNode(node: Option[Byte], weight: Option[Int],
 
     }
 
-    def encodeSeq(data: Array[HData]): Seq[Boolean] = data.flatMap(encode(_))
+    def encodeSeq(data: Array[Byte]): Seq[Boolean] =
+      data.grouped(1).flatMap(x=> encode(new TData(x, HexByte.toHex(x)))).toSeq
 
     @tailrec
-    final def decode(data: Seq[Boolean]): Option[HData] = {
+    final def decode(data: Seq[Boolean]): Option[TData] = {
       this match {
         case TreeNode(n, w, l, r) => {
           data match {
@@ -79,7 +95,7 @@ case class TreeNode(node: Option[Byte], weight: Option[Int],
     }
 
     @tailrec
-    final def decodeSeq(binary: List[Boolean], acc: Queue[HData] = Queue(), root: HuffmanTree = this) : Seq[HData] = {
+    final def decodeSeq(binary: List[Boolean], acc: Queue[TData] = Queue(), root: HuffmanTree = this) : Seq[TData] = {
       this match {
         case TreeNode(n, w, l, r) if n.nonEmpty =>
           binary match {
@@ -93,28 +109,19 @@ case class TreeNode(node: Option[Byte], weight: Option[Int],
             case Nil => acc
           }
         case EmptyNode() =>
-          Seq[HData]()
+          Seq[TData]()
       }
     }
 
     override def toString: String = {
-
-      def b64(data: Option[HData]) : String = {
-        data match {
-          case Some(data) => Base64.getEncoder.encodeToString(Array(data)) // Base64 encode
-          case None => ""
-        }
-      }
-
       this match {
         case TreeNode(n, w, l, r) =>
           (l, r) match {
-            case (EmptyNode(), EmptyNode()) => b64(n)
-            case _ => s"${b64(n)}($l,$r)"
+            case (EmptyNode(), EmptyNode()) => s"${n.getOrElse("")}"
+            case _ => s"${n.getOrElse("")}($l,$r)"
         }
-        case _ => ""
+        case EmptyNode() => ""
       }
-
     }
 
     def fromString(s: String): HuffmanTree = {
@@ -124,18 +131,18 @@ case class TreeNode(node: Option[Byte], weight: Option[Int],
         //def node: Parser[A] = """(\\\\|[^(),\\]|\\,|\\\(|\\\))""".r ^^ {
         //  res => (if (res.startsWith("\\")) res.drop(1) else res).charAt(0).asInstanceOf[A]
         //}
-        def node: Parser[HData] = """([^(),]{1,})""".r ^^ {
-          res => Base64.getDecoder.decode(res).head
+        def node: Parser[TData] = """([^(),]{1,})""".r ^^ {
+          res => new TData(HexByte.toBytes(res), res)
         }
         def subtrees: Parser[(HuffmanTree, HuffmanTree)] = "(" ~ tree.? ~ "," ~ tree.? ~ ")" ^^ {
           case (start ~ left ~ comma ~ right ~ stop) => (left.getOrElse(EmptyNode()), right.getOrElse(EmptyNode()))
         }
         def tree: Parser[HuffmanTree] = (node ~ subtrees | (subtrees | node)) ^^ {
-          case (n: HData) ~ ((l: HuffmanTree, r: HuffmanTree)) =>
+          case (n: TData) ~ ((l: HuffmanTree, r: HuffmanTree)) =>
              TreeNode(Some(n), None, l, r)
           case (l: HuffmanTree, r: HuffmanTree) =>
              TreeNode(None, None, l, r)
-          case n: HData =>
+          case n: TData =>
              TreeNode(Some(n), None, EmptyNode(), EmptyNode())
         }
         def apply(input: String) = parseAll(tree, input) match {

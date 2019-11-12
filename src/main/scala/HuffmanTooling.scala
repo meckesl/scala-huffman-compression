@@ -1,6 +1,7 @@
 import java.io.{BufferedWriter, ByteArrayOutputStream, File, FileNotFoundException, FileOutputStream, FileWriter, PrintWriter}
 import java.nio.file.{Files, Paths}
 import java.util
+import java.util.Base64
 
 import scala.collection.parallel.CollectionConverters._
 
@@ -28,7 +29,11 @@ class HuffmanTooling {
       case Some(file) =>
         time(s"Generate Codec from '$file'") {
         Codec = Some(new HuffmanTree()
-          .build(Files.readAllBytes(Paths.get(file.getAbsolutePath))))
+          .build(
+            Files.readAllBytes(Paths.get(file.getAbsolutePath))
+              .grouped(1)
+              .map(x=> new TData(x, HexByte.toHex(x)))
+              .toList))
         }
       case None => throw new FileNotFoundException("There is no open file")
     }
@@ -39,7 +44,7 @@ class HuffmanTooling {
   def saveCodec: HuffmanTooling = {
     (Codec, File) match {
       case (Some(codec), Some(f)) => saveCodec(s"${f.getAbsolutePath}.codec")
-      case  _ => throw new FileNotFoundException("There is no open file")
+      case _ => throw new FileNotFoundException("There is no open file")
     }
     this
   }
@@ -79,7 +84,8 @@ class HuffmanTooling {
           val bitset = util.BitSet.valueOf(bytes)
           val bools = (0 to bitset.length).map(bitset.get(_)).toList
           val path = Paths.get(s"${f.getAbsolutePath}.dec")
-          Files.write(path, codec.decodeSeq(bools).toArray)
+          val output = codec.decodeSeq(bools).flatMap(_.getBytes())
+          Files.write(path, output.toArray)
         }
       }
       case _ => throw new Exception("A file and a codec must be loaded")
@@ -106,6 +112,7 @@ class HuffmanTooling {
     this
   }
 
+  @throws(classOf[Exception])
   def saveCodec(path: String): HuffmanTooling = {
     (Codec) match {
       case (Some(codec)) => {
@@ -113,6 +120,7 @@ class HuffmanTooling {
         bw.write(codec.toString)
         bw.close()
       }
+      case _ => throw new Exception("A codec must have been generated")
     }
     this
   }
