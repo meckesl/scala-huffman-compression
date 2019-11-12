@@ -1,5 +1,0 @@
-package adapter
-
-trait HuffmanAdapter {
-
-}

@@ -1,12 +1,13 @@
 import java.io.{BufferedWriter, ByteArrayOutputStream, File, FileNotFoundException, FileOutputStream, FileWriter, PrintWriter}
 import java.nio.file.{Files, Paths}
 import java.util
+
 import scala.collection.parallel.CollectionConverters._
 
-class HuffmanTooling[T] {
+class HuffmanTooling {
 
   var File: Option[File] = None
-  var Codec: Option[HuffmanTree[T]] = None
+  var Codec: Option[HuffmanTree] = None
 
   private def time[R](msg: String)(block: => R): R = {
     val t0 = System.nanoTime()
@@ -16,20 +17,18 @@ class HuffmanTooling[T] {
     result
   }
 
-  def openFile(res: String): HuffmanTooling[T] = {
+  def openFile(res: String): HuffmanTooling = {
     File = Some(new File(res))
     this
   }
 
   @throws(classOf[FileNotFoundException])
-  def generateCodec: HuffmanTooling[T] = {
+  def generateCodec: HuffmanTooling = {
     File match {
       case Some(file) =>
         time(s"Generate Codec from '$file'") {
-        Codec = Some(new HuffmanTree[T]()
-          .build(
-            scala.io.Source.fromFile(file)
-              .toList.asInstanceOf[List[T]]))
+        Codec = Some(new HuffmanTree()
+          .build(Files.readAllBytes(Paths.get(file.getAbsolutePath))))
         }
       case None => throw new FileNotFoundException("There is no open file")
     }
@@ -37,7 +36,7 @@ class HuffmanTooling[T] {
   }
 
   @throws(classOf[FileNotFoundException])
-  def saveCodec: HuffmanTooling[T] = {
+  def saveCodec: HuffmanTooling = {
     (Codec, File) match {
       case (Some(codec), Some(f)) => saveCodec(s"${f.getAbsolutePath}.codec")
       case  _ => throw new FileNotFoundException("There is no open file")
@@ -46,15 +45,15 @@ class HuffmanTooling[T] {
   }
 
   @throws(classOf[Exception])
-  def encodeParallel(s: List[T]): Seq[Boolean] = {
+  def encodeParallel(s: List[Byte]): Seq[Boolean] = {
       Codec match {
         case Some(codec) =>
           val cores = Runtime.getRuntime.availableProcessors
           val size = 1 + s.size / cores
-          time(s"// Encoding with $cores cores ($size chars out of ${s.size}) ") {
+          time(s"Encoding with $cores cores ($size chars out of ${s.size}) ") {
             s.grouped(size).zipWithIndex.toSeq.par.flatMap(threadSeq => {
               time(s"Thread #${threadSeq._2 + 1} -> encoding [${threadSeq._1.take(20).mkString("")}]...") {
-                codec.encodeSeq(threadSeq._1)
+                codec.encodeSeq(threadSeq._1.toArray)
               }
             })
           }.seq
@@ -79,11 +78,8 @@ class HuffmanTooling[T] {
           val bytes = Files.readAllBytes(Paths.get(s"${f.getAbsolutePath}.huff"))
           val bitset = util.BitSet.valueOf(bytes)
           val bools = (0 to bitset.length).map(bitset.get(_)).toList
-          var content: String = null
-          content = codec.decodeSeq(bools).mkString("")
-          val pw = new PrintWriter(s"${f.getAbsolutePath}.dec")
-          pw.write(content);
-          pw.close
+          val path = Paths.get(s"${f.getAbsolutePath}.dec")
+          Files.write(path, codec.decodeSeq(bools).toArray)
         }
       }
       case _ => throw new Exception("A file and a codec must be loaded")
@@ -91,14 +87,14 @@ class HuffmanTooling[T] {
   }
 
   @throws(classOf[Exception])
-  def encodeAndSave: HuffmanTooling[T] = {
+  def encodeAndSave: HuffmanTooling = {
     (Codec, File) match {
       case (Some(codec), Some(f)) => {
         time(s"Encoding $File") {
           val baos = new ByteArrayOutputStream()
           val fos = new FileOutputStream(s"${f.getAbsolutePath}.huff")
-          val fileData = scala.io.Source.fromFile(f).mkString.toList.asInstanceOf[List[T]]
-          val toWrite = HuffmanTooling.asBitSet(encodeParallel(fileData))
+          val fileData = Files.readAllBytes(Paths.get(f.getAbsolutePath))
+          val toWrite = HuffmanTooling.asBitSet(encodeParallel(fileData.toList))
           baos.write(toWrite.toByteArray)
           baos.writeTo(fos)
           baos.close()
@@ -110,7 +106,7 @@ class HuffmanTooling[T] {
     this
   }
 
-  def saveCodec(path: String): HuffmanTooling[T] = {
+  def saveCodec(path: String): HuffmanTooling = {
     (Codec) match {
       case (Some(codec)) => {
         val bw = new BufferedWriter(new FileWriter(path))
@@ -122,7 +118,7 @@ class HuffmanTooling[T] {
   }
 
   @throws(classOf[FileNotFoundException])
-  def openCodec(): HuffmanTooling[T] = {
+  def openCodec(): HuffmanTooling = {
     File match {
       case Some(file) =>
         openCodec(s"${file.getAbsolutePath}.codec")
@@ -130,9 +126,9 @@ class HuffmanTooling[T] {
     }
   }
 
-  def openCodec(codecPath: String): HuffmanTooling[T] = {
+  def openCodec(codecPath: String): HuffmanTooling = {
     val codecData = scala.io.Source.fromFile(s"$codecPath").mkString
-    Codec = Some(new HuffmanTree[T]().fromString(codecData))
+    Codec = Some(new HuffmanTree().fromString(codecData))
     this
   }
 
