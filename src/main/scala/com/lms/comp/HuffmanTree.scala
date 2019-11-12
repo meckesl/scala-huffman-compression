@@ -1,13 +1,15 @@
-import java.util.Base64
+package com.lms.comp
 
-import scala.annotation.tailrec
 import com.github.benmanes.caffeine.cache.Caffeine
 import scalacache._
+import com.lms.comp.util.HexByte
 
+import scala.annotation.tailrec
 import scala.collection.immutable.Queue
 
-class TData(da: Array[Byte], hash:String) {
-  def getBytes() = da
+class TData(data: Array[Byte]) {
+  lazy val hash = HexByte.toHex(data)
+  def getBytes(): Array[Byte] = data
   override def hashCode(): Int = hash.hashCode
   override def toString: String = hash
 }
@@ -18,11 +20,10 @@ case class TreeNode(node: Option[TData], weight: Option[Int],
 
   class HuffmanTree {
 
-    def fragments(t: HuffmanTree): List[TData] = {
+    def flatten(): Seq[TreeNode] = {
       this match {
-        case TreeNode(d, w, l, r) if d.nonEmpty => (fragments(l) ::: fragments(r)) :+ d.get
-        case TreeNode(d, w, l, r) if d.isEmpty => (fragments(l) ::: fragments(r))
-        case EmptyNode() => List[TData]()
+        case TreeNode(d, w, l, r) => (this +: l.flatten ++: r.flatten).asInstanceOf[Seq[TreeNode]]
+        case EmptyNode() => List[TreeNode]()
       }
     }
 
@@ -78,7 +79,7 @@ case class TreeNode(node: Option[TData], weight: Option[Int],
     }
 
     def encodeSeq(data: Array[Byte]): Seq[Boolean] =
-      data.grouped(1).flatMap(x=> encode(new TData(x, HexByte.toHex(x)))).toSeq
+      data.grouped(1).flatMap(x=> encode(new TData(x))).toSeq
 
     @tailrec
     final def decode(data: Seq[Boolean]): Option[TData] = {
@@ -132,7 +133,7 @@ case class TreeNode(node: Option[TData], weight: Option[Int],
         //  res => (if (res.startsWith("\\")) res.drop(1) else res).charAt(0).asInstanceOf[A]
         //}
         def node: Parser[TData] = """([^(),]{1,})""".r ^^ {
-          res => new TData(HexByte.toBytes(res), res)
+          res => new TData(HexByte.toBytes(res))
         }
         def subtrees: Parser[(HuffmanTree, HuffmanTree)] = "(" ~ tree.? ~ "," ~ tree.? ~ ")" ^^ {
           case (start ~ left ~ comma ~ right ~ stop) => (left.getOrElse(EmptyNode()), right.getOrElse(EmptyNode()))

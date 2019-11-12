@@ -1,9 +1,11 @@
-import java.io.{BufferedWriter, ByteArrayOutputStream, File, FileNotFoundException, FileOutputStream, FileWriter, PrintWriter}
-import java.nio.file.{Files, Paths}
-import java.util
-import java.util.Base64
+package com.lms.comp
 
-import scala.collection.parallel.CollectionConverters._
+import java.io._
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
+import java.util.BitSet
+
+import com.lms.comp.util.HexByte
 
 class HuffmanTooling {
 
@@ -28,12 +30,13 @@ class HuffmanTooling {
     File match {
       case Some(file) =>
         time(s"Generate Codec from '$file'") {
-        Codec = Some(new HuffmanTree()
-          .build(
-            Files.readAllBytes(Paths.get(file.getAbsolutePath))
-              .grouped(1)
-              .map(x=> new TData(x, HexByte.toHex(x)))
-              .toList))
+
+          val bytes = Files.readAllBytes(Paths.get(file.getAbsolutePath))
+            .grouped(1)
+            .map(new TData(_))
+            .toList
+
+          Codec = Some(new HuffmanTree().build(bytes))
         }
       case None => throw new FileNotFoundException("There is no open file")
     }
@@ -51,18 +54,19 @@ class HuffmanTooling {
 
   @throws(classOf[Exception])
   def encodeParallel(s: List[Byte]): Seq[Boolean] = {
-      Codec match {
-        case Some(codec) =>
-          val cores = Runtime.getRuntime.availableProcessors
-          val size = 1 + s.size / cores
-          time(s"Encoding with $cores cores ($size chars out of ${s.size}) ") {
-            s.grouped(size).zipWithIndex.toSeq.par.flatMap(threadSeq => {
-              time(s"Thread #${threadSeq._2 + 1} -> encoding [${threadSeq._1.take(20).mkString("")}]...") {
-                codec.encodeSeq(threadSeq._1.toArray)
-              }
-            })
-          }.seq
-        case None => throw new Exception("Codec not loaded")
+    import scala.collection.parallel.CollectionConverters._
+    Codec match {
+      case Some(codec) =>
+        val cores = Runtime.getRuntime.availableProcessors
+        val size = 1 + s.size / cores
+        time(s"Encoding with $cores cores ($size chars out of ${s.size}) ") {
+          s.grouped(size).zipWithIndex.toSeq.par.flatMap(threadSeq => {
+            time(s"Thread #${threadSeq._2 + 1} -> encoding [${threadSeq._1.take(20).mkString("")}]...") {
+              codec.encodeSeq(threadSeq._1.toArray)
+            }
+          })
+        }.seq
+      case None => throw new Exception("Codec not loaded")
     }
   }
 
@@ -81,7 +85,7 @@ class HuffmanTooling {
       case (Some(codec), Some(f)) => {
         time(s"Decoding ${f.getAbsolutePath}.huff") {
           val bytes = Files.readAllBytes(Paths.get(s"${f.getAbsolutePath}.huff"))
-          val bitset = util.BitSet.valueOf(bytes)
+          val bitset = BitSet.valueOf(bytes)
           val bools = (0 to bitset.length).map(bitset.get(_)).toList
           val path = Paths.get(s"${f.getAbsolutePath}.dec")
           val output = codec.decodeSeq(bools).flatMap(_.getBytes())
@@ -140,12 +144,43 @@ class HuffmanTooling {
     this
   }
 
+  def getCodecStats: Unit = {
+
+    (Codec, File) match {
+      case (Some(codec), Some(f)) =>
+
+        val fileSize = f.length()
+        val fileData: Array[Byte] = Files.readAllBytes(Paths.get(f.getAbsolutePath))
+
+        val entries = codec.flatten.filter(_.node.nonEmpty).sortBy(_.weight).reverse
+        println("==============")
+        println(s"File: $f ($fileSize bytes)")
+        println(s"Codec: entries=${entries.size}")
+        println("==============")
+
+        entries.foreach(n => {
+
+          val byte: Byte = n.node.get.getBytes().head
+          val byteInSource = fileData.count(_.equals(byte))
+          //val byteInSource = s"[${new String(n.node.get.getBytes(), StandardCharsets.UTF_8)}]".r.findAllIn(fileData.mkString).length
+
+          println(
+            s"utf8='${new String(n.node.get.getBytes(), StandardCharsets.UTF_8)}' " +
+            s"hex=${n.node.get} " +
+            s"value=${HexByte.toBytes(n.node.get.toString).length} " +
+            s"bitcost=${codec.encode(n.node.get).size} " +
+            s"weight=${(100.toDouble/fileSize)*byteInSource}% ")
+        })
+      case _ => throw new Exception("A file and a codec must be loaded")
+    }
+  }
+
 }
 
 object HuffmanTooling {
   def bitsAsInts(bit8: Seq[Boolean]): Int = Integer.parseInt(asBinaryDigits(bit8), 2)
-  def asBitSet(bits: Seq[Boolean]) : util.BitSet = {
-    val bitSet = new util.BitSet(bits.length)
+  def asBitSet(bits: Seq[Boolean]) : BitSet = {
+    val bitSet = new BitSet(bits.length)
     bits.zipWithIndex.foreach{case(b:Boolean,i:Int)=>if(b)bitSet.set(i)}
     bitSet
   }

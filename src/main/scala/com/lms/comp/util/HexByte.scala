@@ -1,3 +1,5 @@
+package com.lms.comp.util
+
 import java.math.BigInteger
 
 object HexByte {

@@ -1,3 +1,4 @@
+import com.lms.comp.HuffmanTooling
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.Assertions._
 import org.scalatest.matchers.must.Matchers

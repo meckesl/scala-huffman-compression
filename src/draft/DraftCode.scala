@@ -1,4 +1,4 @@
-import HuffmanCodec.{EmptyTree, NonEmptyTree, Tree}
+import com.lms.comp.HuffmanTree
 
 type T = Char
 
