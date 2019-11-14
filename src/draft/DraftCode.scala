@@ -23,3 +23,7 @@ def buildBalanced(xs: Seq[T]): HuffmanTree[T] = {
   )
 
 }
+
+//def node: Parser[A] = """(\\\\|[^(),\\]|\\,|\\\(|\\\))""".r ^^ {
+//  res => (if (res.startsWith("\\")) res.drop(1) else res).charAt(0).asInstanceOf[A]
+//}

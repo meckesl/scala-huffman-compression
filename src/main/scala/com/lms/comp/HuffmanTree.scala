@@ -9,7 +9,7 @@ import scala.collection.immutable.Queue
 
 class TData(data: Array[Byte]) {
   lazy val hash = HexByte.toHex(data)
-  def getBytes(): Array[Byte] = data
+  lazy val bytes: Array[Byte] = data
   override def hashCode(): Int = hash.hashCode
   override def toString: String = hash
 }
@@ -129,9 +129,6 @@ case class TreeNode(node: Option[TData], weight: Option[Int],
       import scala.util.parsing.combinator.RegexParsers
       object TreeParser extends RegexParsers {
         override def skipWhitespace = false
-        //def node: Parser[A] = """(\\\\|[^(),\\]|\\,|\\\(|\\\))""".r ^^ {
-        //  res => (if (res.startsWith("\\")) res.drop(1) else res).charAt(0).asInstanceOf[A]
-        //}
         def node: Parser[TData] = """([^(),]{1,})""".r ^^ {
           res => new TData(HexByte.toBytes(res))
         }

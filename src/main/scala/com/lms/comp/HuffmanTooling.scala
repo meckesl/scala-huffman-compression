@@ -53,18 +53,20 @@ class HuffmanTooling {
   }
 
   @throws(classOf[Exception])
-  def encodeParallel(s: List[Byte]): Seq[Boolean] = {
+  def encodeParallel(s: Seq[Byte]): Seq[Boolean] = {
     import scala.collection.parallel.CollectionConverters._
     Codec match {
       case Some(codec) =>
         val cores = Runtime.getRuntime.availableProcessors
-        val size = 1 + s.size / cores
-        time(s"Encoding with $cores cores ($size chars out of ${s.size}) ") {
-          s.grouped(size).zipWithIndex.toSeq.par.flatMap(threadSeq => {
-            time(s"Thread #${threadSeq._2 + 1} -> encoding [${threadSeq._1.take(20).mkString("")}]...") {
-              codec.encodeSeq(threadSeq._1.toArray)
+        val singleCoreTaskSize = 1 + s.size / cores
+        time(s"Encoding with $cores cores ($singleCoreTaskSize chars out of ${s.size}) ") {
+          s.grouped(singleCoreTaskSize).zipWithIndex.toSeq.par.flatMap {
+          case (threadSeq: Seq[Byte], threadId: Int) => {
+            time(s"Thread #${threadId + 1} -> encoding [${threadSeq.take(20).mkString("")}]...") {
+              codec.encodeSeq(threadSeq.toArray)
             }
-          })
+          }
+          }
         }.seq
       case None => throw new Exception("Codec not loaded")
     }
@@ -88,7 +90,7 @@ class HuffmanTooling {
           val bitset = BitSet.valueOf(bytes)
           val bools = (0 to bitset.length).map(bitset.get(_)).toList
           val path = Paths.get(s"${f.getAbsolutePath}.dec")
-          val output = codec.decodeSeq(bools).flatMap(_.getBytes())
+          val output = codec.decodeSeq(bools).flatMap(_.bytes)
           Files.write(path, output.toArray)
         }
       }
@@ -160,12 +162,12 @@ class HuffmanTooling {
 
         entries.foreach(n => {
 
-          val byte: Byte = n.node.get.getBytes().head
+          val byte: Byte = n.node.get.bytes.head
           val byteInSource = fileData.count(_.equals(byte))
           //val byteInSource = s"[${new String(n.node.get.getBytes(), StandardCharsets.UTF_8)}]".r.findAllIn(fileData.mkString).length
 
           println(
-            s"utf8='${new String(n.node.get.getBytes(), StandardCharsets.UTF_8)}' " +
+            s"utf8='${new String(n.node.get.bytes, StandardCharsets.UTF_8)}' " +
             s"hex=${n.node.get} " +
             s"value=${HexByte.toBytes(n.node.get.toString).length} " +
             s"bitcost=${codec.encode(n.node.get).size} " +
