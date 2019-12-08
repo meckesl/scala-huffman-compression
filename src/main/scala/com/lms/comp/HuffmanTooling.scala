@@ -13,10 +13,11 @@ class HuffmanTooling {
   var Codec: Option[HuffmanTree] = None
 
   private def time[R](msg: String)(block: => R): R = {
+    println(msg)
     val t0 = System.nanoTime()
     val result = block
     val t1 = System.nanoTime()
-    println(msg + " -> " + (t1 - t0) / 1000000 + "ms")
+    println(" -> " + (t1 - t0) / 1000000 + "ms" + "(" + msg + ")")
     result
   }
 

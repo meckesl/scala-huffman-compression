@@ -65,4 +65,24 @@ class CodecTest extends AnyFunSpec with Matchers {
 
   }
 
+  describe("Binary 200kb") {
+
+    val tooling = new HuffmanTooling()
+      .openFile("src/test/resources/binary_200kb.pdf")
+
+    it("generates and saves codec") {
+      tooling.generateCodec.saveCodec
+    }
+
+    it("outputs compressed") {
+      tooling.encodeAndSave
+    }
+
+    it("reads back from compressed") {
+      tooling.openCodec("src/test/resources/binary_200kb.pdf.codec")
+      tooling.decodeAndSave
+    }
+
+  }
+
 }
